@@ -6,4 +6,4 @@ scikit-learn
 matplotlib
 statsmodels
 #
-causalimpact @ https://github.com/WillianFuks/causalimpact/archive/refs/heads/master.zip
+pycausalimpact @ https://github.com/WillianFuks/causalimpact/archive/refs/heads/master.zip
