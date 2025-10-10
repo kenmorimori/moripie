@@ -77,6 +77,7 @@ def login():
             st.error("ユーザー名またはパスワードが正しくありません。")
     return False
 
+
 def tab1():
     st.write("主成分分析（PCA）")
 
@@ -613,6 +614,275 @@ def tab3():
         st.pyplot(fig)
 
 def tab4():
+    st.write("重回帰（自動変数選択）")
+
+    st.subheader("目的")
+    st.markdown("- 最も精度（汎化性能）が高くなる **変数の組み合わせ** を自動探索し、予測モデル・係数・**貢献度**を出力します。")
+
+    st.subheader("入力フォーマット")
+    st.markdown("""
+    - 1列目：目的変数（数値）
+    - 2列目以降：説明変数（数値。文字列は自動除外）
+    """)
+
+    up = st.file_uploader("CSV / XLSX をアップロード", type=["csv", "xlsx"], key="regsel_file")
+    if up is None:
+        return
+
+    # --- 読み込み ---
+    try:
+        if up.name.lower().endswith(".xlsx"):
+            bytes_data = up.read()
+            xls = pd.ExcelFile(BytesIO(bytes_data))
+            sheet = "A_入力" if "A_入力" in xls.sheet_names else xls.sheet_names[0]
+            df = pd.read_excel(BytesIO(bytes_data), sheet_name=sheet)
+        else:
+            try:
+                df = pd.read_csv(up)
+            except UnicodeDecodeError:
+                up.seek(0)
+                df = pd.read_csv(up, encoding="shift-jis")
+    except Exception as e:
+        st.error(f"読み込みエラー: {e}")
+        return
+
+    if df.shape[1] < 2:
+        st.error("少なくとも2列（目的+説明変数）が必要です。")
+        return
+
+    st.write("プレビュー：")
+    st.dataframe(df.head())
+
+    # --- 列の整理 ---
+    y = pd.to_numeric(df.iloc[:, 0], errors="coerce")
+    X_raw = df.iloc[:, 1:].copy()
+    X_num = X_raw.apply(pd.to_numeric, errors="coerce")
+    dropped = [c for c in X_raw.columns if c not in X_num.columns]
+    if dropped:
+        st.warning("数値化できない列を除外: " + ", ".join(map(str, dropped)))
+
+    # 欠損処理
+    na_opt = st.radio("欠損の扱い", ["行削除（推奨）", "列平均で補完"], index=0, horizontal=True)
+    if na_opt == "行削除（推奨）":
+        data = pd.concat([y, X_num], axis=1).dropna()
+        y = data.iloc[:, 0].values.astype(float)
+        X = data.iloc[:, 1:].copy()
+    else:
+        X = X_num.fillna(X_num.mean())
+        ok = y.notna()
+        y = y[ok].values.astype(float)
+        X = X.loc[ok]
+
+    feature_names = list(X.columns)
+    p = len(feature_names)
+    if p == 0:
+        st.error("有効な説明変数がありません。")
+        return
+
+    # オプション
+    st.subheader("探索設定")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        criterion = st.selectbox("最適化基準", ["CV-RMSE(最小)", "CV-R2(最大)", "AIC(最小)", "BIC(最小)", "調整R2(最大)"], index=0)
+    with col2:
+        kfold = st.number_input("CV 分割数", min_value=3, max_value=10, value=5)
+    with col3:
+        max_vars = st.number_input("最大使用変数数（計算抑制用）", min_value=1, max_value=min(p, 15), value=min(10, p))
+
+    method = st.radio("探索法", ["前進選択（高速）", "ベストサブセット（上限kまで）"], index=0, horizontal=True)
+
+    std_on = st.checkbox("説明変数を標準化して学習（推奨）", value=True)
+
+    # --- 補助関数群（scikit-learn無し） ---
+    def kfold_indices(n, k, seed=42):
+        rng = np.random.default_rng(seed)
+        idx = np.arange(n)
+        rng.shuffle(idx)
+        return np.array_split(idx, k)
+
+    def fit_ols(Xm, yv):
+        Xm_const = sm.add_constant(Xm, has_constant='add')
+        model = sm.OLS(yv, Xm_const)
+        res = model.fit()
+        return res
+
+    def cv_scores(cols):
+        # 交差検証の R2 と RMSE
+        idx_folds = kfold_indices(len(y), int(kfold))
+        r2s, rmses = [], []
+        for val_idx in idx_folds:
+            tr_idx = np.setdiff1d(np.arange(len(y)), val_idx)
+            Xtr, ytr = X.iloc[tr_idx][cols], y[tr_idx]
+            Xva, yva = X.iloc[val_idx][cols], y[val_idx]
+
+            # 標準化オプション
+            if std_on:
+                mu = Xtr.mean(axis=0)
+                sd = Xtr.std(axis=0).replace(0, 1e-9)
+                Xtrz = (Xtr - mu) / sd
+                Xvaz = (Xva - mu) / sd
+                res = fit_ols(Xtrz, ytr)
+                yhat = res.predict(sm.add_constant(Xvaz, has_constant='add'))
+            else:
+                res = fit_ols(Xtr, ytr)
+                yhat = res.predict(sm.add_constant(Xva, has_constant='add'))
+
+            yva = np.asarray(yva, dtype=float)
+            yhat = np.asarray(yhat, dtype=float)
+            ss_res = np.sum((yva - yhat)**2)
+            ss_tot = np.sum((yva - np.mean(yva))**2) + 1e-12
+            r2s.append(1 - ss_res/ss_tot)
+            rmses.append(np.sqrt(np.mean((yva - yhat)**2)))
+        return float(np.mean(r2s)), float(np.mean(rmses))
+
+    def info_scores(res, nobs, kparams):
+        # AIC/BIC/調整R2
+        aic = res.aic
+        bic = res.bic
+        r2 = res.rsquared
+        adjr2 = 1 - (1-r2)*(nobs-1)/(nobs-kparams-1)
+        return aic, bic, adjr2
+
+    # --- 標準化用（最終モデルを元スケールに戻すために保存） ---
+    mu_full = None
+    sd_full = None
+
+    # --- 探索 ---
+    best = {"cols": [], "score": None, "res": None, "cv_r2": None, "cv_rmse": None,
+            "aic": None, "bic": None, "adjr2": None}
+
+    def evaluate(cols):
+        nonlocal mu_full, sd_full
+        Xsub = X[cols]
+        if std_on:
+            mu = Xsub.mean(axis=0)
+            sd = Xsub.std(axis=0).replace(0, 1e-9)
+            Xz = (Xsub - mu) / sd
+            res = fit_ols(Xz, y)
+            mu_full, sd_full = mu, sd
+        else:
+            res = fit_ols(Xsub, y)
+        aic, bic, adjr2 = info_scores(res, res.nobs, len(cols)+1)
+        cv_r2, cv_rmse = cv_scores(cols)
+        # 選択基準のスコア
+        if criterion == "CV-RMSE(最小)":
+            score = -cv_rmse
+        elif criterion == "CV-R2(最大)":
+            score = cv_r2
+        elif criterion == "AIC(最小)":
+            score = -aic
+        elif criterion == "BIC(最小)":
+            score = -bic
+        else:  # 調整R2(最大)
+            score = adjr2
+        return score, res, cv_r2, cv_rmse, aic, bic, adjr2
+
+    import itertools
+
+    if method == "前進選択（高速）":
+        remaining = feature_names.copy()
+        selected = []
+        last_score = -1e18
+        while remaining and len(selected) < max_vars:
+            cand_best = None
+            for c in remaining:
+                cols = selected + [c]
+                score, *_rest = evaluate(cols)
+                if (cand_best is None) or (score > cand_best[0]):
+                    cand_best = (score, cols, _rest)
+            if cand_best and cand_best[0] > last_score + 1e-9:
+                last_score = cand_best[0]
+                selected = cand_best[1]
+                r = cand_best[2]
+                best.update({
+                    "cols": selected.copy(),
+                    "score": cand_best[0],
+                    "res": r[0],
+                    "cv_r2": r[1],
+                    "cv_rmse": r[2],
+                    "aic": r[3],
+                    "bic": r[4],
+                    "adjr2": r[5],
+                })
+                remaining = [c for c in remaining if c not in selected]
+            else:
+                break
+
+    else:  # ベストサブセット
+        selected = None
+        for k in range(1, int(max_vars)+1):
+            for cols in itertools.combinations(feature_names, k):
+                cols = list(cols)
+                score, *_rest = evaluate(cols)
+                if (best["res"] is None) or (score > best["score"]):
+                    best.update({
+                        "cols": cols.copy(),
+                        "score": score,
+                        "res": _rest[0],
+                        "cv_r2": _rest[1],
+                        "cv_rmse": _rest[2],
+                        "aic": _rest[3],
+                        "bic": _rest[4],
+                        "adjr2": _rest[5],
+                    })
+
+    # --- 最終モデルの係数（元スケールへ戻す） ---
+    cols = best["cols"]
+    if std_on:
+        beta_std = best["res"].params.copy()  # index: const + cols
+        intercept_std = beta_std.loc["const"]
+        coef_std = beta_std.drop(index="const")
+
+        mu = mu_full[cols]
+        sd = sd_full[cols].replace(0, 1e-9)
+
+        # yは標準化していないので、X標準化→元スケール換算
+        coef_orig = (coef_std / sd).rename(index=dict(zip(coef_std.index, cols)))
+        intercept_orig = float(intercept_std - np.sum((coef_std * mu / sd).values))
+    else:
+        params = best["res"].params.copy()
+        intercept_orig = float(params.loc["const"])
+        coef_orig = params.drop(index="const")
+        coef_orig.index = cols
+
+    coef_tbl = pd.DataFrame({
+        "variable": ["(Intercept)"] + cols,
+        "coef": [intercept_orig] + [coef_orig[c] for c in cols]
+    })
+    st.subheader("選択された変数と係数（元スケール）")
+    st.dataframe(coef_tbl.style.format({"coef": "{:.6g}"}))
+
+    st.caption(f"CV-R2={best['cv_r2']:.3f} / CV-RMSE={best['cv_rmse']:.3g} / AIC={best['aic']:.1f} / BIC={best['bic']:.1f} / 調整R2={best['adjr2']:.3f}")
+
+    # --- 寄与（貢献度）: ŷ = intercept + Σ coef * Xj の各項を分解 ---
+    Xm = X[cols].copy()
+    contrib = pd.DataFrame({c: coef_orig[c] * Xm[c].values for c in cols}, index=Xm.index)
+    contrib["intercept"] = intercept_orig
+    contrib["y_hat"] = contrib.sum(axis=1)
+
+    st.subheader("寄与分解（上位表示）")
+    st.dataframe(contrib.head().style.format("{:.3g}"))
+
+    # 平均寄与とシェア
+    avg_contrib = contrib[cols].mean().rename("avg_contrib")
+    total = np.sum(np.abs(avg_contrib.values)) + 1e-12  # 符号混在を避ける簡易シェア
+    share = (np.abs(avg_contrib) / total).rename("share_abs")
+    contrib_summary = pd.concat([avg_contrib, share], axis=1).sort_values("share_abs", ascending=False)
+    st.subheader("平均寄与とシェア（|平均寄与|ベース）")
+    st.dataframe(contrib_summary.style.format({"avg_contrib": "{:.3g}", "share_abs": "{:.1%}"}))
+
+    # ダウンロード
+    st.download_button("係数テーブルをCSVでダウンロード",
+        data=coef_tbl.to_csv(index=False).encode("utf-8-sig"),
+        file_name="reg_selected_coefs.csv", mime="text/csv")
+
+    out_df = pd.concat([pd.Series(y, name="y_true"), contrib], axis=1)
+    st.download_button("寄与分解データをCSVでダウンロード",
+        data=out_df.to_csv(index=False).encode("utf-8-sig"),
+        file_name="reg_contributions.csv", mime="text/csv")
+
+
+def tab5():
     st.write("MMM（軽量版）")
 
     st.subheader("目的")
@@ -880,7 +1150,7 @@ def tab4():
 
 
 
-def tab5():
+def tab6():
     st.write("STL分解")
     st.subheader("目的")
     text_21="""
@@ -980,7 +1250,7 @@ def tab5():
 
 
 
-def tab6():
+def tab7():
     st.write("TIME最適化")
 
     st.subheader("目的")
@@ -1494,7 +1764,7 @@ def tab6():
 
         except Exception as e:
             st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
-def tab7():
+def tab8():
     st.write("Causal Impact")
 
     st.subheader("目的")
@@ -1692,7 +1962,7 @@ def tab7():
     ax.set_xlabel("Date"); ax.set_ylabel("KPI"); ax.legend()
     st.pyplot(fig)
  
-def tab8():
+def tab9():
     st.write("Cuerve数式予測")
     st.subheader("目的")
     text_11="""
@@ -2446,7 +2716,7 @@ def tab6():
 #Streamlitを実行する関数
 def main():
     if login():
-        tabs = st.sidebar.radio("メニュー", ["主成分分析","Logistic回帰", "順序Logistic回帰","MMM（軽量版）","STL分解", "TIME最適化", "Causal Impact", "Curve数式予測"])
+        tabs = st.sidebar.radio("メニュー", ["主成分分析","Logistic回帰", "順序Logistic回帰","重回帰（自動選択）","MMM（軽量版）","STL分解", "TIME最適化", "Causal Impact", "Curve数式予測"])
 
         # ログアウトボタン
         if st.button("ログアウト"):
@@ -2459,16 +2729,18 @@ def main():
             tab2()
         elif tabs == "順序Logistic回帰":
             tab3()
-        elif tabs == "MMM（軽量版）":
+        elif tabs == "重回帰（自動選択）":
             tab4()
-        elif tabs == "STL分解":
+        elif tabs == "MMM（軽量版）":
             tab5()
-        elif tabs == "TIME最適化":
+        elif tabs == "STL分解":
             tab6()
-        elif tabs == "Causal Impact":
+        elif tabs == "TIME最適化":
             tab7()
-        elif tabs == "Curve数式予測":
+        elif tabs == "Causal Impact":
             tab8()
+        elif tabs == "Curve数式予測":
+            tab9()
 
 
 #実行コード
