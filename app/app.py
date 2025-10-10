@@ -2693,7 +2693,7 @@ def display_execution():
             st.write("割り付けトラッキングデータ:")
             st.write(st.session_state["allocated_program_data"])
 
-def tab6():
+def tab10():
     """アプリケーションのメイン関数"""
     initialize_session_state()
 
@@ -2730,7 +2730,7 @@ def main():
         elif tabs == "MMM（軽量版）":
             tab5()
         elif tabs == "STL分解":
-            tab6()
+            tab10()
         elif tabs == "TIME最適化":
             tab7()
         elif tabs == "Causal Impact":
