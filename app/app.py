@@ -300,55 +300,76 @@ def tab2():
                 stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
                 df = pd.read_csv(stringio, encoding="shift-jis")
 
+            # === 読み込みはそのまま（df ができている前提） ===
             st.write(df)
 
-            num = df.shape[1]-2
-            formula = df.columns.values[1] + "~"
-            print(num)
-            name_list = []
-            for i in range(num):
-                columns = df.columns.values[i+2]
-                formula = formula + "+" + columns
-                name_list.append(columns)
+            # 1列目=目的変数、2列目以降=説明変数（※0始まりに注意）
+            y = df.iloc[:, 0]
+            X = df.iloc[:, 1:].copy()
 
-            #ロジスティック回帰モデルの推定
-            logistic = smf.glm(formula = formula,data = df,family = sm.families.Binomial()).fit()
+            # 数値化（文字が混ざっていたら NaN→除外/補完）
+            X = X.apply(pd.to_numeric, errors='coerce')
+            drop_na_opt = st.radio("欠損の扱い", ["行削除（推奨）", "列平均で補完"], index=0, horizontal=True)
+            if drop_na_opt == "行削除（推奨）":
+                data = pd.concat([y, X], axis=1).dropna()
+                y = data.iloc[:, 0]
+                X = data.iloc[:, 1:]
+            else:
+                X = X.fillna(X.mean())
+                ok_idx = y.notna()
+                y = y[ok_idx]
+                X = X.loc[ok_idx]
 
-            df_dict = pd.DataFrame()
+            # 目的変数は0/1に揃える（すでに0/1ならそのまま）
+            try:
+                y = pd.to_numeric(y, errors='raise')
+            except Exception:
+                y = y.map({True: 1, False: 0})
+            y = (y > 0).astype(int)  # 0/1に正規化
 
-            #予測
-            for i in range(num):
-                num_list = []
-                for j in range(num):
-                    if i == j:
-                        list_num = 1
-                    else:
-                        list_num = 0
-                
-                    num_list.append(list_num)
-                    
-                df_dict[name_list[i]] = num_list
-                
-            #予測値出力
+            # 列名（特徴量名）を後で使うので保持
+            name_list = list(X.columns)
+
+            # 定数項を付与
+            import statsmodels.api as sm
+            X_const = sm.add_constant(X, has_constant='add')
+
+            # === ロジスティック回帰（GLM, Binomial）: フォーミュラを使わない ===
+            logistic = sm.GLM(y, X_const, family=sm.families.Binomial()).fit()
+
+            # 重要度の算出用に「1個だけ1、他0」の行列（定数項=1）を作る
+            import numpy as np
+            num = len(name_list)
+            eye = np.zeros((num, num))
+            np.fill_diagonal(eye, 1)
+
+            df_dict = pd.DataFrame(eye, columns=name_list)
+            df_dict.insert(0, 'const', 1.0)  # 定数項
+
+            # 予測値（each feature = 1, others = 0 の時の確率）
             pred = logistic.predict(df_dict)
-            print(pred)
-            st.write(df_dict.head())
 
-            import scipy as sp
-
+            # オッズ比とp値
+            import numpy as np
             media_list = []
-            # param_list = []
             odds_list = []
             p_values_list = []
+            for i, col in enumerate(name_list):
+                media_list.append(col)
+                coef = logistic.params.get(col, np.nan)
+                odds_list.append(np.exp(coef) if pd.notna(coef) else np.nan)
+                p_values_list.append(logistic.pvalues.get(col, np.nan))
 
-            for i in name_list:
-                media_list.append(i)
-                odds_list.append(sp.exp(logistic.params[i]))
-                p_values_list.append(logistic.pvalues[i])
+            df_odds = pd.DataFrame({
+                "media": media_list,
+                "importance": pred,   # 「その変数だけ1」のときの予測確率
+                "odds": odds_list,
+                "p_values": p_values_list
+            })
 
-            df_odds = pd.DataFrame({"media":media_list,"importance":pred,"odds":odds_list,"p_values": p_values_list})
             st.write(df_odds.head())
             download(df_odds)
+
 
 
         except Exception as e:
