@@ -428,8 +428,7 @@ def tab3():
     # --- y / X ---
     y_raw = df.iloc[:, 0]
     X = df.iloc[:, 1:].copy()
-    # 数値化（非数値は NaN）
-    X = X.apply(pd.to_numeric, errors='coerce')
+    X = X.apply(pd.to_numeric, errors='coerce')  # 非数値→NaN
 
     # 欠損処理
     na_opt = st.radio("欠損値の扱い", ["行ごとに削除（推奨）", "列平均で補完"], index=0, horizontal=True)
@@ -443,9 +442,8 @@ def tab3():
         y_raw = y_raw[ok]
         X = X.loc[ok]
 
-    # 目的の順序を決める
+    # 目的の順序（自動推定）
     uniq = pd.Index(pd.Series(y_raw).dropna().unique())
-    # 自動候補（数値っぽければ数値昇順、そうでなければ文字列昇順）
     try:
         uniq_sorted = pd.Index(sorted(pd.to_numeric(uniq, errors="raise")))
     except Exception:
@@ -472,36 +470,52 @@ def tab3():
     # --- モデル学習（行列指定なので列名に記号があってもOK） ---
     try:
         model = OrderedModel(y, X_std, distr="logit")
-        res = model.fit(method="bfgs", disp=False)  # 収束ログを出したい時は disp=True
+        res = model.fit(method="bfgs", disp=False)
     except Exception as e:
         st.error(f"学習エラー: {e}")
         return
 
+    # statsmodels の版差を吸収してカテゴリ名を取る
+    def get_categories_safe():
+        try:
+            return list(res.model.endog.categories)   # 新しめ
+        except Exception:
+            pass
+        try:
+            return list(y.cat.categories)             # 手元のyから
+        except Exception:
+            pass
+        try:
+            k = res.predict(X_std.iloc[:1], which="prob").shape[1]
+        except Exception:
+            k = 2
+        return [str(i) for i in range(k)]
+
+    cats = [str(c) for c in get_categories_safe()]
+
     st.subheader("推定結果サマリ")
     st.text(res.summary().as_text())
 
-    # 係数と閾値（cut points）を分離
+    # 係数とp値（cut点は後で）
     coef = res.params.reindex(X_std.columns, fill_value=np.nan)
     pvals = res.pvalues.reindex(X_std.columns, fill_value=np.nan)
     odds = np.exp(coef)
-
     coef_df = pd.DataFrame({
         "coef": coef,
         "odds_ratio(単位増加)": odds,
         "p_value": pvals
     }).sort_values("p_value")
-
     st.subheader("係数・オッズ比・p値（説明変数）")
     st.dataframe(coef_df)
-    # === 段階別の“寄与”（Δ確率）を算出 ===
+
+    # === 段階別の“寄与”（Δ確率） ===
     st.subheader("段階ごとの寄与（変数を動かしたときのΔ予測確率）")
 
-    # 他変数は平均（標準化ONなら0）に固定
-    X_base = X_std.mean().to_frame().T
+    X_base = X_std.mean().to_frame().T  # 他変数は平均（標準化ONなら0）
 
     def probs_at(dfrow):
         p = res.predict(dfrow, which="prob")
-        # ndarray or DataFrame -> 1次元ベクトルに
+        # ndarray or DataFrame -> 1D ベクトル
         if hasattr(p, "values"):
             p = p.values
         return np.ravel(p)
@@ -511,58 +525,56 @@ def tab3():
     rows = []
     for col in X_std.columns:
         x1 = X_base.copy()
-        # 0/1ダミーなら 0→1 で比較、連続なら +1標準偏差（標準化OFFなら ±1σを自前で計算）
         unique_vals = pd.unique(X[col].dropna())
-        if set(unique_vals).issubset({0,1}):
-            x1[col] = 1.0
+        if set(unique_vals).issubset({0, 1}):
+            # ダミー: 0→1
             x0 = X_base.copy()
             x0[col] = 0.0
+            x1[col] = 1.0
             p0 = probs_at(x0)
             p1 = probs_at(x1)
             dp = p1 - p0
             step_desc = "0→1"
         else:
-            step = 1.0 if do_std else X[col].std(ddof=0)  # 標準化OFFなら元スケールで+1σ
+            # 連続: +1標準化単位（非標準化なら +1σ）
+            step = 1.0 if do_std else X[col].std(ddof=0)
             x1[col] = X_base[col].iloc[0] + step
             p1 = probs_at(x1)
             dp = p1 - base_p
             step_desc = f"+{('1σ' if not do_std else '1(標準化単位)')}"
 
-        # カテゴリ名とΔ確率を展開
-        for c, d in zip(res.model.endog.categories, dp):
-            rows.append({"variable": col, "category": str(c), "delta_prob": d, "change": step_desc})
+        for c, d in zip(cats, dp):
+            rows.append({"variable": col, "category": str(c), "delta_prob": float(d), "change": step_desc})
 
-    effect_df = pd.DataFrame(rows).sort_values(["variable","category"])
+    effect_df = pd.DataFrame(rows).sort_values(["variable", "category"])
     st.dataframe(effect_df)
 
-    # 見やすいピボット（行=変数, 列=カテゴリ, 値=ΔP）
-    pivot_df = effect_df.pivot(index="variable", columns="category", values="delta_prob").fillna(0.0)
     st.subheader("Δ予測確率（ピボット表示）")
+    pivot_df = effect_df.pivot(index="variable", columns="category", values="delta_prob").fillna(0.0)
     st.dataframe(pivot_df.style.format("{:+.3f}"))
 
-
-    # しきい値（カテゴリ間のカット点）
+    # cut点（カテゴリ間のしきい値）
     cut_df = res.params.drop(index=X_std.columns, errors="ignore").to_frame(name="threshold")
     st.subheader("しきい値（カテゴリ間のcut）")
     st.dataframe(cut_df)
 
     # 予測確率（全行）
-    prob = res.predict(X_std, which="prob")  # shape: [n_samples, n_classes]
-    prob = pd.DataFrame(prob, columns=[f"P({c})" for c in categories], index=X_std.index)
+    prob = res.predict(X_std, which="prob")
+    prob = pd.DataFrame(prob, columns=[f"P({c})" for c in cats], index=X_std.index)
     pred_class = prob.idxmax(axis=1).str.replace("P(", "", regex=False).str.replace(")", "", regex=False)
 
-    out = pd.concat([y_raw.reset_index(drop=True).rename("y_true"),
-                     pred_class.reset_index(drop=True).rename("y_pred"),
-                     prob.reset_index(drop=True)], axis=1)
+    out = pd.concat([
+        y_raw.reset_index(drop=True).rename("y_true"),
+        pred_class.reset_index(drop=True).rename("y_pred"),
+        prob.reset_index(drop=True)
+    ], axis=1)
 
     st.subheader("予測結果（上位表示）")
     st.dataframe(out.head())
 
-    # 簡易精度（一致率）
     acc = (out["y_true"].astype(str) == out["y_pred"].astype(str)).mean()
     st.write(f"**Accuracy（単純一致率）:** {acc:.3f}")
 
-    # ダウンロード
     st.download_button("推定結果（係数）CSVをダウンロード",
                        data=coef_df.to_csv().encode("utf-8"),
                        file_name="ordlogit_coef.csv", mime="text/csv")
@@ -570,7 +582,7 @@ def tab3():
                        data=out.to_csv(index=False).encode("utf-8"),
                        file_name="ordlogit_predictions.csv", mime="text/csv")
 
-    # 効果プロット：1変数を選んで他は平均（0）として曲線表示
+    # 効果プロット
     if len(X_std.columns) >= 1:
         st.subheader("効果プロット（選択変数 vs 予測確率）")
         target_var = st.selectbox("変数を選択", list(X_std.columns))
@@ -578,14 +590,13 @@ def tab3():
         x_min, x_max = X_std[target_var].min(), X_std[target_var].max()
         grid = np.linspace(x_min, x_max, ngrid)
 
-        X_base = X_std.mean().to_frame().T  # 他変数は平均
+        X_base = X_std.mean().to_frame().T
         X_plot = pd.DataFrame(np.repeat(X_base.values, ngrid, axis=0), columns=X_std.columns)
         X_plot[target_var] = grid
 
-
         proba = res.predict(X_plot, which="prob")
+        p_plot = pd.DataFrame(proba, columns=cats)
 
-        import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(7, 4))
         for c in p_plot.columns:
             ax.plot(grid, p_plot[c].values, label=c)
@@ -593,6 +604,7 @@ def tab3():
         ax.set_ylabel("予測確率")
         ax.legend(title="カテゴリ")
         st.pyplot(fig)
+
 
 
 def tab4():
