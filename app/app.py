@@ -8,6 +8,8 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import RidgeCV
+from sklearn.model_selection import KFold
 from statsmodels.miscmodels.ordinal_model import OrderedModel
 import numpy as np
 
@@ -610,10 +612,223 @@ def tab3():
         ax.legend(title="カテゴリ")
         st.pyplot(fig)
 
-
-
-
 def tab4():
+    st.write("MMM（軽量版）")
+
+    st.subheader("目的")
+    st.markdown("""
+    - メディア投資に **アドストック（遅効）** と **飽和（逓減）** を入れた反応曲線を推定し、
+      チャネル別の寄与・ROI・最適配分のヒントを得る。
+    """)
+
+    st.subheader("入力フォーマット")
+    st.markdown("""
+    - 1列目: `date`（日付/週の初日など）
+    - 2列目: `y`（売上/コンバージョン等のKPI）
+    - 3列目以降: 各チャネルの費用（例: `tv_spend`, `webcm_spend`, `search`, ...）
+    """)
+
+    up = st.file_uploader("CSV / XLSX をアップロード", type=["csv", "xlsx"], key="mmm_lite_file")
+    if up is None:
+        return
+
+    # --- 読み込み ---
+    try:
+        if up.name.lower().endswith(".xlsx"):
+            bytes_data = up.read()
+            xls = pd.ExcelFile(BytesIO(bytes_data))
+            sheet = "A_入力" if "A_入力" in xls.sheet_names else xls.sheet_names[0]
+            df = pd.read_excel(BytesIO(bytes_data), sheet_name=sheet)
+        else:
+            try:
+                df = pd.read_csv(up)
+            except UnicodeDecodeError:
+                up.seek(0)
+                df = pd.read_csv(up, encoding="shift-jis")
+    except Exception as e:
+        st.error(f"読み込みエラー: {e}")
+        return
+
+    # 列名整形
+    df.columns = pd.Index(df.columns).map(str)
+    if df.shape[1] < 3:
+        st.error("列は最低3列（date, y, spend...）が必要です。")
+        return
+
+    # 基本整形
+    date_col = df.columns[0]
+    y_col = df.columns[1]
+    spend_cols = list(df.columns[2:])
+
+    # 型変換
+    try:
+        df[date_col] = pd.to_datetime(df[date_col])
+    except Exception:
+        st.warning("date 列を日付に変換できませんでした。文字列のままで処理します。")
+
+    y = pd.to_numeric(df[y_col], errors="coerce")
+    X_spend = df[spend_cols].apply(pd.to_numeric, errors="coerce")
+    data = pd.concat([y, X_spend], axis=1).dropna()
+    y = data.iloc[:, 0].values.astype(float)
+    X_spend = data.iloc[:, 1:].copy()
+    spend_cols = list(X_spend.columns)
+
+    st.write("プレビュー：")
+    st.dataframe(pd.concat([pd.Series(y, name=y_col), X_spend], axis=1).head())
+
+    # --- ハイパラ設定 ---
+    with st.expander("ハイパラ設定（必要なら変更）", expanded=False):
+        alphas = st.multiselect("アドストック減衰 α 候補（0～0.99。高いほど長い遅効）",
+                                [0.3, 0.5, 0.7, 0.85, 0.9], default=[0.5, 0.7, 0.85])
+        betas = st.multiselect("飽和（Hill） β 候補（>0。小さいほど早く飽和）",
+                               [0.5, 1.0, 2.0, 3.0], default=[1.0, 2.0])
+        lam_grid = st.multiselect("Ridge α（正則化強さ）", [0.1, 1.0, 3.0, 10.0, 30.0], default=[1.0, 3.0, 10.0])
+        kfold = st.number_input("CV分割数", min_value=3, max_value=10, value=5)
+
+    if not alphas or not betas:
+        st.error("α, β の候補は1つ以上選んでください。")
+        return
+
+    # --- 変換関数 ---
+    def adstock_geometric(x, alpha):
+        # x: 1D array
+        out = np.zeros_like(x, dtype=float)
+        carry = 0.0
+        for t, val in enumerate(x):
+            out[t] = val + alpha * carry
+            carry = out[t]
+        return out
+
+    def hill_saturation(x, beta):
+        # 単位を揃えるため min-max 正規化 + Hill（軽量）
+        x = np.asarray(x, dtype=float)
+        if np.nanmax(x) == np.nanmin(x):
+            return np.zeros_like(x)
+        x_norm = (x - np.nanmin(x)) / (np.nanmax(x) - np.nanmin(x) + 1e-9)
+        return x_norm ** (1.0 / beta)
+
+    # --- ハイパラ探索（各チャネルで同一α/βを採用する簡易版） ---
+    best_score = -np.inf
+    best_cfg = None
+    best_X = None
+
+    for a in alphas:
+        # アドストック
+        X_ads = np.column_stack([adstock_geometric(X_spend[c].values, a) for c in spend_cols])
+
+        for b in betas:
+            # 飽和
+            X_sat = np.column_stack([hill_saturation(X_ads[:, i], b) for i in range(X_ads.shape[1])])
+
+            # スケール調整（平均0 / 分散1）
+            mu = X_sat.mean(axis=0, keepdims=True)
+            sd = X_sat.std(axis=0, keepdims=True) + 1e-9
+            X_trans = (X_sat - mu) / sd
+
+            # CV Ridge
+            cv = KFold(n_splits=int(kfold), shuffle=True, random_state=42)
+            ridge = RidgeCV(alphas=lam_grid, cv=cv, fit_intercept=True, scoring="r2")
+            ridge.fit(X_trans, y)
+            score = ridge.best_score_
+
+            if score > best_score:
+                best_score = score
+                best_cfg = (a, b, ridge.alpha_, mu, sd, ridge.coef_, ridge.intercept_)
+                best_X = X_trans
+
+    a_star, b_star, lam_star, mu_star, sd_star, coef_star, intercept_star = best_cfg
+
+    st.success(f"Best CV R² = {best_score:.3f} | alpha={a_star} / beta={b_star} / ridge={lam_star}")
+
+    # --- 学習済みで寄与分解 ---
+    y_hat = best_X @ coef_star + intercept_star
+    resid = y - y_hat
+
+    # チャネル寄与（分解は線形のため、各列×係数）
+    contrib = best_X * coef_star  # shape [T, K]
+    contrib_df = pd.DataFrame(contrib, columns=spend_cols := spend_cols)
+    contrib_df["intercept"] = intercept_star
+    contrib_df["residual"] = resid
+    st.subheader("寄与分解（head）")
+    st.dataframe(contrib_df.head().style.format("{:.3f}"))
+
+    # --- 反応曲線 & 限界効率（dROI） ---
+    st.subheader("反応曲線（逓減）と限界効率")
+
+    # 曲線は「単一チャネルだけを動かす」前提で作図（他は平均）
+    ngrid = 50
+    fig, axes = plt.subplots(len(spend_cols), 1, figsize=(7, 3*len(spend_cols)))
+    if len(spend_cols) == 1:
+        axes = [axes]
+
+    for idx, ch in enumerate(spend_cols):
+        base = X_spend.copy()
+        x_raw = base[ch].values
+        lo, hi = np.percentile(x_raw, [1, 99])
+        grid = np.linspace(max(0, lo), hi, ngrid)
+
+        # 他チャネルは平均固定、対象だけを grid に置換 → 変換 → 標準化 → 予測
+        base_vals = base.mean().to_dict()
+        curves = []
+        drois = []
+
+        for g in grid:
+            tmp = base.copy()
+            for c in spend_cols:
+                tmp[c] = base_vals[c]
+            tmp[ch] = g
+
+            # adstock -> saturation -> standardize
+            Xg_ads = np.column_stack([adstock_geometric(tmp[c].values, a_star) for c in spend_cols])
+            Xg_sat = np.column_stack([hill_saturation(Xg_ads[:, i], b_star) for i in range(Xg_ads.shape[1])])
+            Xg = (Xg_sat - mu_star) / sd_star
+
+            y_pred = Xg @ coef_star + intercept_star
+            curves.append(np.mean(y_pred))
+
+        curves = np.array(curves)
+
+        # 数値微分で限界効率（dROI相当）を算出（Δy / Δspend）
+        droi = np.gradient(curves, grid)
+
+        ax = axes[idx]
+        ax.plot(grid, curves, label=f"Response: {ch}")
+        ax2 = ax.twinx()
+        ax2.plot(grid, droi, linestyle="--", label="Marginal effect (dROI)")
+
+        ax.set_xlabel(f"{ch}（投入額）")
+        ax.set_ylabel("予測KPI")
+        ax2.set_ylabel("限界効率")
+        ax.legend(loc="upper left")
+        ax2.legend(loc="upper right")
+
+    st.pyplot(fig)
+
+    # --- 係数テーブル（解釈用） ---
+    coef_tbl = pd.DataFrame({"channel": spend_cols, "coef_on_transformed": coef_star})
+    st.subheader("係数（変換後特徴量上）")
+    st.dataframe(coef_tbl.style.format("{:.4f}"))
+
+    # --- 予算シミュ（全体×±x%） ---
+    st.subheader("簡易予算シミュレーション")
+    pct = st.slider("総予算を何%増減するか", min_value=-50, max_value=100, value=10, step=5)
+    scale = 1.0 + pct/100.0
+    spend_new = X_spend.mean() * scale
+
+    tmp = X_spend.copy()
+    for c in spend_cols:
+        tmp[c] = spend_new[c]
+
+    Xn_ads = np.column_stack([adstock_geometric(tmp[c].values, a_star) for c in spend_cols])
+    Xn_sat = np.column_stack([hill_saturation(Xn_ads[:, i], b_star) for i in range(Xn_ads.shape[1])])
+    Xn = (Xn_sat - mu_star) / sd_star
+    y_pred_new = Xn @ coef_star + intercept_star
+
+    st.write(f"平均KPI（現状）: {np.mean(y_hat):.3f} → 変更後: {np.mean(y_pred_new):.3f}（{pct:+d}%予算）")
+
+
+
+def tab5():
     st.write("STL分解")
     st.subheader("目的")
     text_21="""
@@ -713,7 +928,7 @@ def tab4():
 
 
 
-def tab5():
+def tab6():
     st.write("TIME最適化")
 
     st.subheader("目的")
@@ -1227,7 +1442,7 @@ def tab5():
 
         except Exception as e:
             st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
-def tab6():
+def tab7():
     st.write("Causal Impact")
 
     st.subheader("目的")
@@ -1425,7 +1640,7 @@ def tab6():
     ax.set_xlabel("Date"); ax.set_ylabel("KPI"); ax.legend()
     st.pyplot(fig)
  
-def tab7():
+def tab8():
     st.write("Cuerve数式予測")
     st.subheader("目的")
     text_11="""
@@ -2179,7 +2394,7 @@ def tab6():
 #Streamlitを実行する関数
 def main():
     if login():
-        tabs = st.sidebar.radio("メニュー", ["主成分分析","Logistic回帰", "順序Logistic回帰","STL分解", "TIME最適化", "Causal Impact", "Curve数式予測"])
+        tabs = st.sidebar.radio("メニュー", ["主成分分析","Logistic回帰", "順序Logistic回帰","MMM（軽量版）","STL分解", "TIME最適化", "Causal Impact", "Curve数式予測"])
 
         # ログアウトボタン
         if st.button("ログアウト"):
@@ -2192,14 +2407,16 @@ def main():
             tab2()
         elif tabs == "順序Logistic回帰":
             tab3()
-        elif tabs == "STL分解":
+        elif tabs == "MMM（軽量版）":
             tab4()
-        elif tabs == "TIME最適化":
+        elif tabs == "STL分解":
             tab5()
-        elif tabs == "Causal Impact":
+        elif tabs == "TIME最適化":
             tab6()
-        elif tabs == "Curve数式予測":
+        elif tabs == "Causal Impact":
             tab7()
+        elif tabs == "Curve数式予測":
+            tab8()
 
 
 #実行コード
