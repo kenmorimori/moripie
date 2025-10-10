@@ -690,10 +690,9 @@ def tab4():
         max_vars = st.number_input("最大使用変数数（計算抑制用）", min_value=1, max_value=min(p, 15), value=min(10, p))
 
     method = st.radio("探索法", ["前進選択（高速）", "ベストサブセット（上限kまで）"], index=0, horizontal=True)
-
     std_on = st.checkbox("説明変数を標準化して学習（推奨）", value=True)
 
-    # --- 補助関数群（scikit-learn無し） ---
+    # --- 補助関数 ---
     def kfold_indices(n, k, seed=42):
         rng = np.random.default_rng(seed)
         idx = np.arange(n)
@@ -707,7 +706,6 @@ def tab4():
         return res
 
     def cv_scores(cols):
-        # 交差検証の R2 と RMSE
         idx_folds = kfold_indices(len(y), int(kfold))
         r2s, rmses = [], []
         for val_idx in idx_folds:
@@ -715,7 +713,6 @@ def tab4():
             Xtr, ytr = X.iloc[tr_idx][cols], y[tr_idx]
             Xva, yva = X.iloc[val_idx][cols], y[val_idx]
 
-            # 標準化オプション
             if std_on:
                 mu = Xtr.mean(axis=0)
                 sd = Xtr.std(axis=0).replace(0, 1e-9)
@@ -736,35 +733,29 @@ def tab4():
         return float(np.mean(r2s)), float(np.mean(rmses))
 
     def info_scores(res, nobs, kparams):
-        # AIC/BIC/調整R2
         aic = res.aic
         bic = res.bic
         r2 = res.rsquared
         adjr2 = 1 - (1-r2)*(nobs-1)/(nobs-kparams-1)
         return aic, bic, adjr2
 
-    # --- 標準化用（最終モデルを元スケールに戻すために保存） ---
-    mu_full = None
-    sd_full = None
-
-    # --- 探索 ---
+    # --- ベスト保持（※mu/sdも保存） ---
     best = {"cols": [], "score": None, "res": None, "cv_r2": None, "cv_rmse": None,
-            "aic": None, "bic": None, "adjr2": None}
+            "aic": None, "bic": None, "adjr2": None, "mu": None, "sd": None}
 
     def evaluate(cols):
-        nonlocal mu_full, sd_full
         Xsub = X[cols]
         if std_on:
             mu = Xsub.mean(axis=0)
             sd = Xsub.std(axis=0).replace(0, 1e-9)
             Xz = (Xsub - mu) / sd
             res = fit_ols(Xz, y)
-            mu_full, sd_full = mu, sd
         else:
+            mu, sd = None, None
             res = fit_ols(Xsub, y)
         aic, bic, adjr2 = info_scores(res, res.nobs, len(cols)+1)
         cv_r2, cv_rmse = cv_scores(cols)
-        # 選択基準のスコア
+
         if criterion == "CV-RMSE(最小)":
             score = -cv_rmse
         elif criterion == "CV-R2(最大)":
@@ -773,9 +764,9 @@ def tab4():
             score = -aic
         elif criterion == "BIC(最小)":
             score = -bic
-        else:  # 調整R2(最大)
+        else:
             score = adjr2
-        return score, res, cv_r2, cv_rmse, aic, bic, adjr2
+        return score, res, cv_r2, cv_rmse, aic, bic, adjr2, mu, sd
 
     import itertools
 
@@ -787,9 +778,9 @@ def tab4():
             cand_best = None
             for c in remaining:
                 cols = selected + [c]
-                score, *_rest = evaluate(cols)
+                score, *rest = evaluate(cols)
                 if (cand_best is None) or (score > cand_best[0]):
-                    cand_best = (score, cols, _rest)
+                    cand_best = (score, cols, rest)
             if cand_best and cand_best[0] > last_score + 1e-9:
                 last_score = cand_best[0]
                 selected = cand_best[1]
@@ -803,40 +794,45 @@ def tab4():
                     "aic": r[3],
                     "bic": r[4],
                     "adjr2": r[5],
+                    "mu": r[6],
+                    "sd": r[7],
                 })
                 remaining = [c for c in remaining if c not in selected]
             else:
                 break
-
     else:  # ベストサブセット
-        selected = None
         for k in range(1, int(max_vars)+1):
             for cols in itertools.combinations(feature_names, k):
                 cols = list(cols)
-                score, *_rest = evaluate(cols)
+                score, *rest = evaluate(cols)
                 if (best["res"] is None) or (score > best["score"]):
                     best.update({
                         "cols": cols.copy(),
                         "score": score,
-                        "res": _rest[0],
-                        "cv_r2": _rest[1],
-                        "cv_rmse": _rest[2],
-                        "aic": _rest[3],
-                        "bic": _rest[4],
-                        "adjr2": _rest[5],
+                        "res": rest[0],
+                        "cv_r2": rest[1],
+                        "cv_rmse": rest[2],
+                        "aic": rest[3],
+                        "bic": rest[4],
+                        "adjr2": rest[5],
+                        "mu": rest[6],
+                        "sd": rest[7],
                     })
 
     # --- 最終モデルの係数（元スケールへ戻す） ---
     cols = best["cols"]
+    if best["res"] is None or len(cols) == 0:
+        st.error("適切なモデルを見つけられませんでした。")
+        return
+
     if std_on:
-        beta_std = best["res"].params.copy()  # index: const + cols
+        beta_std = best["res"].params.copy()      # index: const + cols
         intercept_std = beta_std.loc["const"]
         coef_std = beta_std.drop(index="const")
 
-        mu = mu_full[cols]
-        sd = sd_full[cols].replace(0, 1e-9)
+        mu = best["mu"].reindex(cols)
+        sd = best["sd"].reindex(cols).replace(0, 1e-9)
 
-        # yは標準化していないので、X標準化→元スケール換算
         coef_orig = (coef_std / sd).rename(index=dict(zip(coef_std.index, cols)))
         intercept_orig = float(intercept_std - np.sum((coef_std * mu / sd).values))
     else:
@@ -854,7 +850,7 @@ def tab4():
 
     st.caption(f"CV-R2={best['cv_r2']:.3f} / CV-RMSE={best['cv_rmse']:.3g} / AIC={best['aic']:.1f} / BIC={best['bic']:.1f} / 調整R2={best['adjr2']:.3f}")
 
-    # --- 寄与（貢献度）: ŷ = intercept + Σ coef * Xj の各項を分解 ---
+    # --- 寄与（貢献度） ---
     Xm = X[cols].copy()
     contrib = pd.DataFrame({c: coef_orig[c] * Xm[c].values for c in cols}, index=Xm.index)
     contrib["intercept"] = intercept_orig
@@ -865,7 +861,7 @@ def tab4():
 
     # 平均寄与とシェア
     avg_contrib = contrib[cols].mean().rename("avg_contrib")
-    total = np.sum(np.abs(avg_contrib.values)) + 1e-12  # 符号混在を避ける簡易シェア
+    total = np.sum(np.abs(avg_contrib.values)) + 1e-12
     share = (np.abs(avg_contrib) / total).rename("share_abs")
     contrib_summary = pd.concat([avg_contrib, share], axis=1).sort_values("share_abs", ascending=False)
     st.subheader("平均寄与とシェア（|平均寄与|ベース）")
