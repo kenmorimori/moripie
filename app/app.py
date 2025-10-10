@@ -6,6 +6,9 @@ from sklearn.metrics import r2_score  # 決定係数計算用
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+import numpy as np
 
 try:
     from causalimpact import CausalImpact
