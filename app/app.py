@@ -798,7 +798,7 @@ def tab4():
 
     # チャネル寄与（分解は線形のため、各列×係数）
     contrib = best_X * coef_star  # shape [T, K]
-    contrib_df = pd.DataFrame(contrib, columns=spend_cols := spend_cols)
+    contrib_df = pd.DataFrame(contrib, columns=spend_cols)
     contrib_df["intercept"] = intercept_star
     contrib_df["residual"] = resid
     st.subheader("寄与分解（head）")
