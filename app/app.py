@@ -558,9 +558,17 @@ def tab3():
     st.subheader("しきい値（カテゴリ間のcut）")
     st.dataframe(cut_df)
 
-    # 予測確率（全行）
-    prob = res.predict(X_std, which="prob")
-    prob = pd.DataFrame(prob, columns=[f"P({c})" for c in cats], index=X_std.index)
+    # ===== 予測確率（全行） =====
+    proba = res.predict(X_std, which="prob")   # ndarray or DataFrame
+    # 確実に float の numpy 配列へ
+    proba = np.asarray(proba, dtype=float)
+
+    # モデルのカテゴリ順で列を付与
+    prob = pd.DataFrame(proba,
+                        columns=[f"P({c})" for c in cats],
+                        index=X_std.index)
+
+    # 予測カテゴリ
     pred_class = prob.idxmax(axis=1).str.replace("P(", "", regex=False).str.replace(")", "", regex=False)
 
     out = pd.concat([
@@ -570,19 +578,14 @@ def tab3():
     ], axis=1)
 
     st.subheader("予測結果（上位表示）")
-    st.dataframe(out.head())
+    st.dataframe(out.head().style.format({col: "{:.3f}" for col in prob.columns}))
 
+    # 一致率
     acc = (out["y_true"].astype(str) == out["y_pred"].astype(str)).mean()
     st.write(f"**Accuracy（単純一致率）:** {acc:.3f}")
 
-    st.download_button("推定結果（係数）CSVをダウンロード",
-                       data=coef_df.to_csv().encode("utf-8"),
-                       file_name="ordlogit_coef.csv", mime="text/csv")
-    st.download_button("予測確率CSVをダウンロード",
-                       data=out.to_csv(index=False).encode("utf-8"),
-                       file_name="ordlogit_predictions.csv", mime="text/csv")
 
-    # 効果プロット
+    # ===== 効果プロット（選択変数 vs 予測確率） =====
     if len(X_std.columns) >= 1:
         st.subheader("効果プロット（選択変数 vs 予測確率）")
         target_var = st.selectbox("変数を選択", list(X_std.columns))
@@ -594,8 +597,10 @@ def tab3():
         X_plot = pd.DataFrame(np.repeat(X_base.values, ngrid, axis=0), columns=X_std.columns)
         X_plot[target_var] = grid
 
-        proba = res.predict(X_plot, which="prob")
-        p_plot = pd.DataFrame(proba, columns=cats)
+        proba_plot = res.predict(X_plot, which="prob")
+        proba_plot = np.asarray(proba_plot, dtype=float)
+
+        p_plot = pd.DataFrame(proba_plot, columns=[str(c) for c in cats])
 
         fig, ax = plt.subplots(figsize=(7, 4))
         for c in p_plot.columns:
@@ -604,6 +609,7 @@ def tab3():
         ax.set_ylabel("予測確率")
         ax.legend(title="カテゴリ")
         st.pyplot(fig)
+
 
 
 
