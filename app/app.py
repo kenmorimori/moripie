@@ -71,139 +71,288 @@ def login():
     return False
 
 def tab1():
-    st.write("Cuerve数式予測")
+    st.write("主成分分析（PCA）")
+
+    # === セクション：説明 ===
     st.subheader("目的")
-    text_11="""
-    - 目的変数（出稿量や予算）に対する説明変数（リーチや認知）の曲線を作成する。"""
-    st.markdown(text_11)
+    st.markdown("""
+    - 多数の説明変数に潜む共通因子を抽出し、次元圧縮して全体構造を把握する。
+    """)
+
     st.subheader("使用ケース")
-    text_12="""
-    - **出稿量（予算）とリーチの関係分析**: 広告出稿量の増加に対して、どの程度リーチが増加するかを予測。
-    - **出稿量（予算）と認知度の関係分析**: 広告出稿量が増加に対して、どの程度認知度が上昇するかを予測。"""
-    st.markdown(text_12)
+    st.markdown("""
+    - **多変量の要約**：媒体接触や属性が多いときに、少数の指標（主成分）へ要約。  
+    - **可視化**：2次元に圧縮してクラスタ傾向・外れ値を把握。  
+    - **前処理**：回帰やクラスタリング前に多重共線性を緩和。
+    """)
+
     st.subheader("inputデータ")
-    text_13="""
+    st.markdown("""
+    - 1列目：**目的変数（y）**  
+    - 2列目以降：**説明変数（X）**（数値列）  
+    ※Excel/CSV対応。Excelは **A_入力** シートがあれば優先、無ければ先頭シートを読み込みます。
+    """)
+
+    st.subheader("アウトプット説明")
+    st.markdown("""
+    - **固有値・寄与率・累積寄与率**：各主成分がどれだけ分散を説明するか。  
+    - **成分負荷量（loadings）**：各変数が主成分にどれだけ寄与するか。  
+    - **スコア（scores）**：各サンプルの主成分上の座標。  
+    - **スクリープロット** と **バイプロット（PC1×PC2）** を表示。  
+    - **CSVダウンロード**：成分負荷量・スコアを保存可能。
+    """)
+
+    # === ファイル入力 ===
+    up = st.file_uploader("PCA用ファイル（CSV / XLSX）をアップロードしてください", type=["csv", "xlsx"], key="pca_file")
+    if up is None:
+        return
+
+    # === 読み込み ===
+    try:
+        if up.name.lower().endswith(".xlsx"):
+            bytes_data = up.read()
+            xls = pd.ExcelFile(BytesIO(bytes_data))
+            sheet = "A_入力" if "A_入力" in xls.sheet_names else xls.sheet_names[0]
+            df = pd.read_excel(BytesIO(bytes_data), sheet_name=sheet)
+        else:
+            try:
+                df = pd.read_csv(up)
+            except UnicodeDecodeError:
+                up.seek(0)
+                df = pd.read_csv(up, encoding="shift-jis")
+    except Exception as e:
+        st.error(f"読み込みエラー: {e}")
+        return
+
+    if df.shape[1] < 2:
+        st.error("少なくとも2列（1列目=目的変数、2列目以降=説明変数）が必要です。")
+        return
+
+    st.write("データプレビュー：")
+    st.dataframe(df.head())
+
+    # === y / X 分割（1列目=目的変数, 2列目以降=説明変数） ===
+    y = df.iloc[:, 0]
+    X_raw = df.iloc[:, 1:].copy()
+
+    # 数値列のみ利用（非数値は除外）
+    X_num = X_raw.select_dtypes(include=[np.number])
+    dropped = [c for c in X_raw.columns if c not in X_num.columns]
+    if dropped:
+        st.warning(f"数値でない列を除外しました: {', '.join(map(str, dropped))}")
+
+    # 欠損値処理
+    na_opt = st.radio("欠損値の扱い", ["行ごとに削除（推奨）", "列平均で補完"], index=0, horizontal=True)
+    if na_opt == "行ごとに削除（推奨）":
+        data = pd.concat([y, X_num], axis=1).dropna()
+        y = data.iloc[:, 0]
+        X_num = data.iloc[:, 1:]
+    else:
+        X_num = X_num.fillna(X_num.mean())
+
+    if X_num.shape[1] == 0 or X_num.shape[0] < 2:
+        st.error("有効な数値データが不足しています。")
+        return
+
+    # スケーリング（平均0, 分散1）
+    scaler = StandardScaler()
+    X_std = scaler.fit_transform(X_num)
+
+    # === 成分数の指定方法 ===
+    st.subheader("成分数の指定")
+    mode = st.radio("選択", ["個数を指定", "累積寄与率で自動"], index=1, horizontal=True)
+
+    if mode == "個数を指定":
+        k_max = min(X_num.shape[1], 20)
+        n_components = st.slider("主成分の個数", min_value=1, max_value=k_max, value=min(2, k_max), step=1)
+        pca = PCA(n_components=n_components, random_state=0)
+    else:
+        thr = st.slider("累積寄与率（例：0.80〜0.99）", min_value=0.50, max_value=0.99, value=0.90, step=0.01)
+        pca = PCA(n_components=thr, random_state=0)
+
+    # === PCA 実行 ===
+    try:
+        scores = pca.fit_transform(X_std)
+    except Exception as e:
+        st.error(f"PCA実行エラー: {e}")
+        return
+
+    comps = pca.components_                  # 形状: [n_components, n_features]
+    expvar = pca.explained_variance_ratio_   # 各成分の寄与率
+    cumexp = np.cumsum(expvar)
+
+    # === テーブル類 ===
+    pc_names = [f"PC{i+1}" for i in range(len(expvar))]
+    loadings = pd.DataFrame(comps.T, index=X_num.columns, columns=pc_names)
+    loadings_abs = loadings.abs().sort_values(pc_names[0], ascending=False)
+
+    scores_df = pd.DataFrame(scores, columns=pc_names, index=X_num.index)
+    scores_df.insert(0, y.name if hasattr(y, "name") and y.name is not None else "target", y.loc[scores_df.index].values)
+
+    exp_table = pd.DataFrame({
+        "PC": pc_names,
+        "explained_variance_ratio": expvar,
+        "cumulative_ratio": cumexp
+    })
+
+    st.subheader("寄与率")
+    st.dataframe(exp_table)
+
+    st.subheader("成分負荷量（loadings）")
+    st.caption("※数値の絶対値が大きいほど、その変数が該当主成分に強く寄与")
+    st.dataframe(loadings_abs)
+
+    st.subheader("スコア（各サンプルのPC座標）")
+    st.dataframe(scores_df.head())
+
+    # === ダウンロード ===
+    st.download_button(
+        "成分負荷量CSVをダウンロード",
+        data=loadings.to_csv(index=True).encode("utf-8"),
+        file_name="pca_loadings.csv",
+        mime="text/csv"
+    )
+    st.download_button(
+        "スコアCSVをダウンロード",
+        data=scores_df.to_csv(index=True).encode("utf-8"),
+        file_name="pca_scores.csv",
+        mime="text/csv"
+    )
+
+    # === スクリープロット ===
+    st.subheader("スクリープロット（寄与率）")
+    fig1, ax1 = plt.subplots(figsize=(8, 4))
+    ax1.plot(range(1, len(expvar) + 1), expvar, marker='o', label='Explained variance ratio')
+    ax1.plot(range(1, len(cumexp) + 1), cumexp, marker='o', linestyle='--', label='Cumulative')
+    ax1.set_xlabel("Principal Component")
+    ax1.set_ylabel("Ratio")
+    ax1.set_xticks(range(1, len(expvar) + 1))
+    ax1.legend()
+    st.pyplot(fig1)
+
+    # === バイプロット（PC1×PC2） ===
+    if len(pc_names) >= 2:
+        st.subheader("バイプロット（PC1 × PC2）")
+        fig2, ax2 = plt.subplots(figsize=(6, 6))
+
+        # スコア散布
+        ax2.scatter(scores_df["PC1"], scores_df["PC2"], alpha=0.6)
+        ax2.set_xlabel("PC1")
+        ax2.set_ylabel("PC2")
+        ax2.axhline(0, linewidth=0.5)
+        ax2.axvline(0, linewidth=0.5)
+
+        # 矢印（変数ベクトル）：成分負荷量を可視化
+        # スケーリング（見やすさ調整）
+        arrow_scale = 1.0
+        load2 = loadings[["PC1", "PC2"]].values * arrow_scale
+
+        for i, var in enumerate(X_num.columns):
+            ax2.arrow(0, 0, load2[i, 0], load2[i, 1], head_width=0.02, length_includes_head=True)
+            ax2.text(load2[i, 0]*1.07, load2[i, 1]*1.07, var, fontsize=9)
+
+        ax2.set_title("Biplot")
+        st.pyplot(fig2)
+    else:
+        st.info("PCが1つのため、バイプロットは表示しません。")
+
+
+def tab2():
+    st.write("Logistic回帰")
+
+    st.subheader("目的")
+    text_31="""
+    - ある特定の事象が起きる確率を分析し、結果を予測する。"""
+    st.markdown(text_31)
+    st.subheader("使用ケース")
+    text_32="""
+    - 調査結果の個票データ解析: 説明変数として各メディアの接触有無（0,1データ）、目的変数として認知などのKPI有無（0,1データ）を使用して、各メディアの接触がKPIに与える影響を定量化する。GoogleトレンドやDS.INSIGHTなどからKWボリュームの過去傾向を分析し、季節性や長期トレンドを確認。
+    - CV起点でのCP評価: IDベースに、CPごとにFQしたかどうかを説明変数として（0,1データ）、ある指定期間内にCVしたかどうかを目的変数としたときに（0,1データ）、過去蓄積効果があったのか確認する。"""
+    st.markdown(text_32)
+    st.subheader("inputデータ")
+    text_33="""
     - 目的変数となる値とそれに伴う説明変数を入力。"""
     if st.button("Click me to go to folder"):
         st.write('[Go to folder](https://hakuhodody-my.sharepoint.com/:f:/r/personal/sd000905_hakuhodody-holdings_co_jp/Documents/%E7%B5%B1%E5%90%88AP%E5%B1%80_AaaS1-4%E9%83%A8_%E5%85%B1%E6%9C%89OneDrive/04.%20%E3%83%84%E3%83%BC%E3%83%AB%EF%BC%8F%E3%82%BD%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3/megupy/01.input?csf=1&web=1&e=waFpBB)')
-    st.markdown(text_13)
+    st.markdown(text_33)
     st.subheader("アウトプット説明")
-    st.markdown("- モデルの数式")
-    st.latex(r"""
-    y = \frac{K}{1 + \left(a \left(\frac{x}{10^{dx}}\right)^b\right)} \cdot 10^{dy}
-    """)
-    text_14="""
-    - 「dx」「dy」は桁数を揃えるための数値。
-    - 出力された、「a」「b」「K」「dx」「dy」を上記式に代入。
-    - Number of decisions（決定係数, R²）: モデルの適合度を示す。1に近い程モデルがデータにフィットしていることを意味する。"""
-    st.markdown(text_14)
+    text_34="""
+    - **★importance**: 説明変数（各メディア接触有無）が目的変数（KPI）に与える貢献度をはかるための指標。
+    - **odds**: オッズ比。importanceと大小関係は基本同じ。1より大きいならKPIに対して＋に働く1よりい低いなら－に働く。
+    - P>|z|：P値。有意水準0.05を下回ればその説明変数は有意な偏回帰係数であることが言える。"""
+    st.markdown(text_34)
+    text_35="""
+    - inputデータの目的変数と説明変数の入力位置に注意。"""
+    st.markdown(text_35)
 
-
-
-
-    uploaded_file = st.file_uploader("Curve数式予測用inputファイルをアップロードしてください", type=["csv", "xlsx"])
+    uploaded_file = st.file_uploader("ファイルをアップロードしてください", type=["csv", "xlsx"])
 
     if uploaded_file is not None:
         try:
             st.write("アップロードされたファイルの中身:")
             if uploaded_file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
                 bytes_data = uploaded_file.read()
-                xl = pd.ExcelFile(BytesIO(bytes_data))
-                # シート名が "A_入力" の場合のみ読み込む
-                if "A_入力" in xl.sheet_names:
-                    df = pd.read_excel(xl, sheet_name="A_入力")
-                    st.write(df)
-                else:
-                    st.warning("指定されたシートが見つかりませんでした。")
+                df = pd.read_excel(BytesIO(bytes_data))
             else:
                 stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
                 df = pd.read_csv(stringio, encoding="shift-jis")
-                st.write(df)
 
-            num = int(df.shape[1] / 2)
-            for i in range(num):
-                df_temp = df.iloc[:, [i * 2, i * 2 + 1]]
-                df_temp.dropna()
+            st.write(df)
 
-            st.write(df)  # 一旦読み込んだデータのNaNを削除して表示
-
+            num = df.shape[1]-2
+            formula = df.columns.values[1] + "~"
+            print(num)
             name_list = []
-            a_list = []
-            b_list = []
-            K_list = []
-            R_list = []
-            d_x_list = []
-            d_y_list = []
-
-            max_fev = 100000000
-            df2 = pd.DataFrame()
-
             for i in range(num):
-                df_temp = df.iloc[:, [i * 2, i * 2 + 1]]
-                df_temp = df_temp.dropna()
+                columns = df.columns.values[i+2]
+                formula = formula + "+" + columns
+                name_list.append(columns)
 
-                x_observed = df_temp.iloc[:, 0]
-                y = df_temp.iloc[:, 1]
+            #ロジスティック回帰モデルの推定
+            logistic = smf.glm(formula = formula,data = df,family = sm.families.Binomial()).fit()
 
-                # 説明変数と目的変数の桁数を計算する
-                max_num = max(x_observed)
-                s_x = str(max_num)
-                if '.' in s_x:
-                    s_x_i, s_x_d = s_x.split('.')
-                else:
-                    s_x_i = s_x
-                    s_x_d = '0'
-                d_x = float(len(s_x_i))
+            df_dict = pd.DataFrame()
 
-                max_num = max(y)
-                s_y = str(max_num)
-                s_y_i, s_y_d = s_y.split('.')
-                d_y = float(len(s_y_i))
+            #予測
+            for i in range(num):
+                num_list = []
+                for j in range(num):
+                    if i == j:
+                        list_num = 1
+                    else:
+                        list_num = 0
+                
+                    num_list.append(list_num)
+                    
+                df_dict[name_list[i]] = num_list
+                
+            #予測値出力
+            pred = logistic.predict(df_dict)
+            print(pred)
+            st.write(df_dict.head())
 
-                x_observed = x_observed / 10 ** d_x
-                y = y / 10 ** d_y
-                max_num = max(y) * 10
+            import scipy as sp
 
-                bounds = ((0, -5, 0), (100, 0, max_num))
-                # bounds = ((0,-3,0),(10000000,0,50000))
+            media_list = []
+            # param_list = []
+            odds_list = []
+            p_values_list = []
 
-                name = df.columns.values[i * 2]
-                param, pcov = curve_fit(func_fit, x_observed, y, bounds=bounds, maxfev=max_fev)
-                fit_y = func_fit(x_observed, param[0], param[1], param[2])
-                df2[name + "_x"] = x_observed * 10 ** d_x
-                df2[name + "_y"] = y * 10 ** d_y
-                df2[name + "_fit"] = fit_y * 10 ** d_y
-                R2 = r2_score(fit_y, y)
+            for i in name_list:
+                media_list.append(i)
+                odds_list.append(sp.exp(logistic.params[i]))
+                p_values_list.append(logistic.pvalues[i])
 
-                name_list.append(name)
-                a_list.append(param[0])
-                b_list.append(param[1])
-                K_list.append(param[2])
-                d_x_list.append(d_x)
-                d_y_list.append(d_y)
-                R_list.append(R2)
+            df_odds = pd.DataFrame({"media":media_list,"importance":pred,"odds":odds_list,"p_values": p_values_list})
+            st.write(df_odds.head())
+            download(df_odds)
 
-            df_param = pd.DataFrame({"name": name_list, "a": a_list, "b": b_list, "max_value": K_list,
-                                     "d_x": d_x_list, "d_y": d_y_list, "R2": R_list})
-            st.write(df_param)  # 一旦読み込んだデータのNaNを削除したよ
-            download(df_param)
-
-            # プルダウンによるグラフ表示
-            selected_name = st.selectbox("グラフ化するデータを選択してください", df_param['name'].unique())
-            if selected_name:
-                plt.figure(figsize=(10, 6))
-                plt.scatter(df2[selected_name + "_x"], df2[selected_name + "_y"], label="Data")
-                plt.plot(df2[selected_name + "_x"], df2[selected_name + "_fit"], 'r-', label="Fit")
-                plt.xlabel("X")
-                plt.ylabel("Y")
-                plt.title(f"Fit for {selected_name}")
-                plt.legend()
-                st.pyplot(plt)
 
         except Exception as e:
             st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
 
-def tab2():
+
+def tab3():
     st.write("STL分解")
     st.subheader("目的")
     text_21="""
@@ -302,99 +451,6 @@ def tab2():
             st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
 
 
-def tab3():
-    st.write("Logistic回帰")
-
-    st.subheader("目的")
-    text_31="""
-    - ある特定の事象が起きる確率を分析し、結果を予測する。"""
-    st.markdown(text_31)
-    st.subheader("使用ケース")
-    text_32="""
-    - 調査結果の個票データ解析: 説明変数として各メディアの接触有無（0,1データ）、目的変数として認知などのKPI有無（0,1データ）を使用して、各メディアの接触がKPIに与える影響を定量化する。GoogleトレンドやDS.INSIGHTなどからKWボリュームの過去傾向を分析し、季節性や長期トレンドを確認。
-    - CV起点でのCP評価: IDベースに、CPごとにFQしたかどうかを説明変数として（0,1データ）、ある指定期間内にCVしたかどうかを目的変数としたときに（0,1データ）、過去蓄積効果があったのか確認する。"""
-    st.markdown(text_32)
-    st.subheader("inputデータ")
-    text_33="""
-    - 目的変数となる値とそれに伴う説明変数を入力。"""
-    if st.button("Click me to go to folder"):
-        st.write('[Go to folder](https://hakuhodody-my.sharepoint.com/:f:/r/personal/sd000905_hakuhodody-holdings_co_jp/Documents/%E7%B5%B1%E5%90%88AP%E5%B1%80_AaaS1-4%E9%83%A8_%E5%85%B1%E6%9C%89OneDrive/04.%20%E3%83%84%E3%83%BC%E3%83%AB%EF%BC%8F%E3%82%BD%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3/megupy/01.input?csf=1&web=1&e=waFpBB)')
-    st.markdown(text_33)
-    st.subheader("アウトプット説明")
-    text_34="""
-    - **★importance**: 説明変数（各メディア接触有無）が目的変数（KPI）に与える貢献度をはかるための指標。
-    - **odds**: オッズ比。importanceと大小関係は基本同じ。1より大きいならKPIに対して＋に働く1よりい低いなら－に働く。
-    - P>|z|：P値。有意水準0.05を下回ればその説明変数は有意な偏回帰係数であることが言える。"""
-    st.markdown(text_34)
-    text_35="""
-    - inputデータの目的変数と説明変数の入力位置に注意。"""
-    st.markdown(text_35)
-
-    uploaded_file = st.file_uploader("ファイルをアップロードしてください", type=["csv", "xlsx"])
-
-    if uploaded_file is not None:
-        try:
-            st.write("アップロードされたファイルの中身:")
-            if uploaded_file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-                bytes_data = uploaded_file.read()
-                df = pd.read_excel(BytesIO(bytes_data))
-            else:
-                stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
-                df = pd.read_csv(stringio, encoding="shift-jis")
-
-            st.write(df)
-
-            num = df.shape[1]-2
-            formula = df.columns.values[1] + "~"
-            print(num)
-            name_list = []
-            for i in range(num):
-                columns = df.columns.values[i+2]
-                formula = formula + "+" + columns
-                name_list.append(columns)
-
-            #ロジスティック回帰モデルの推定
-            logistic = smf.glm(formula = formula,data = df,family = sm.families.Binomial()).fit()
-
-            df_dict = pd.DataFrame()
-
-            #予測
-            for i in range(num):
-                num_list = []
-                for j in range(num):
-                    if i == j:
-                        list_num = 1
-                    else:
-                        list_num = 0
-                
-                    num_list.append(list_num)
-                    
-                df_dict[name_list[i]] = num_list
-                
-            #予測値出力
-            pred = logistic.predict(df_dict)
-            print(pred)
-            st.write(df_dict.head())
-
-            import scipy as sp
-
-            media_list = []
-            # param_list = []
-            odds_list = []
-            p_values_list = []
-
-            for i in name_list:
-                media_list.append(i)
-                odds_list.append(sp.exp(logistic.params[i]))
-                p_values_list.append(logistic.pvalues[i])
-
-            df_odds = pd.DataFrame({"media":media_list,"importance":pred,"odds":odds_list,"p_values": p_values_list})
-            st.write(df_odds.head())
-            download(df_odds)
-
-
-        except Exception as e:
-            st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
 
 def tab4():
     st.write("TIME最適化")
@@ -1108,6 +1164,139 @@ def tab5():
     ax.set_xlabel("Date"); ax.set_ylabel("KPI"); ax.legend()
     st.pyplot(fig)
  
+def tab6():
+    st.write("Cuerve数式予測")
+    st.subheader("目的")
+    text_11="""
+    - 目的変数（出稿量や予算）に対する説明変数（リーチや認知）の曲線を作成する。"""
+    st.markdown(text_11)
+    st.subheader("使用ケース")
+    text_12="""
+    - **出稿量（予算）とリーチの関係分析**: 広告出稿量の増加に対して、どの程度リーチが増加するかを予測。
+    - **出稿量（予算）と認知度の関係分析**: 広告出稿量が増加に対して、どの程度認知度が上昇するかを予測。"""
+    st.markdown(text_12)
+    st.subheader("inputデータ")
+    text_13="""
+    - 目的変数となる値とそれに伴う説明変数を入力。"""
+    if st.button("Click me to go to folder"):
+        st.write('[Go to folder](https://hakuhodody-my.sharepoint.com/:f:/r/personal/sd000905_hakuhodody-holdings_co_jp/Documents/%E7%B5%B1%E5%90%88AP%E5%B1%80_AaaS1-4%E9%83%A8_%E5%85%B1%E6%9C%89OneDrive/04.%20%E3%83%84%E3%83%BC%E3%83%AB%EF%BC%8F%E3%82%BD%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3/megupy/01.input?csf=1&web=1&e=waFpBB)')
+    st.markdown(text_13)
+    st.subheader("アウトプット説明")
+    st.markdown("- モデルの数式")
+    st.latex(r"""
+    y = \frac{K}{1 + \left(a \left(\frac{x}{10^{dx}}\right)^b\right)} \cdot 10^{dy}
+    """)
+    text_14="""
+    - 「dx」「dy」は桁数を揃えるための数値。
+    - 出力された、「a」「b」「K」「dx」「dy」を上記式に代入。
+    - Number of decisions（決定係数, R²）: モデルの適合度を示す。1に近い程モデルがデータにフィットしていることを意味する。"""
+    st.markdown(text_14)
+
+
+
+
+    uploaded_file = st.file_uploader("Curve数式予測用inputファイルをアップロードしてください", type=["csv", "xlsx"])
+
+    if uploaded_file is not None:
+        try:
+            st.write("アップロードされたファイルの中身:")
+            if uploaded_file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                bytes_data = uploaded_file.read()
+                xl = pd.ExcelFile(BytesIO(bytes_data))
+                # シート名が "A_入力" の場合のみ読み込む
+                if "A_入力" in xl.sheet_names:
+                    df = pd.read_excel(xl, sheet_name="A_入力")
+                    st.write(df)
+                else:
+                    st.warning("指定されたシートが見つかりませんでした。")
+            else:
+                stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
+                df = pd.read_csv(stringio, encoding="shift-jis")
+                st.write(df)
+
+            num = int(df.shape[1] / 2)
+            for i in range(num):
+                df_temp = df.iloc[:, [i * 2, i * 2 + 1]]
+                df_temp.dropna()
+
+            st.write(df)  # 一旦読み込んだデータのNaNを削除して表示
+
+            name_list = []
+            a_list = []
+            b_list = []
+            K_list = []
+            R_list = []
+            d_x_list = []
+            d_y_list = []
+
+            max_fev = 100000000
+            df2 = pd.DataFrame()
+
+            for i in range(num):
+                df_temp = df.iloc[:, [i * 2, i * 2 + 1]]
+                df_temp = df_temp.dropna()
+
+                x_observed = df_temp.iloc[:, 0]
+                y = df_temp.iloc[:, 1]
+
+                # 説明変数と目的変数の桁数を計算する
+                max_num = max(x_observed)
+                s_x = str(max_num)
+                if '.' in s_x:
+                    s_x_i, s_x_d = s_x.split('.')
+                else:
+                    s_x_i = s_x
+                    s_x_d = '0'
+                d_x = float(len(s_x_i))
+
+                max_num = max(y)
+                s_y = str(max_num)
+                s_y_i, s_y_d = s_y.split('.')
+                d_y = float(len(s_y_i))
+
+                x_observed = x_observed / 10 ** d_x
+                y = y / 10 ** d_y
+                max_num = max(y) * 10
+
+                bounds = ((0, -5, 0), (100, 0, max_num))
+                # bounds = ((0,-3,0),(10000000,0,50000))
+
+                name = df.columns.values[i * 2]
+                param, pcov = curve_fit(func_fit, x_observed, y, bounds=bounds, maxfev=max_fev)
+                fit_y = func_fit(x_observed, param[0], param[1], param[2])
+                df2[name + "_x"] = x_observed * 10 ** d_x
+                df2[name + "_y"] = y * 10 ** d_y
+                df2[name + "_fit"] = fit_y * 10 ** d_y
+                R2 = r2_score(fit_y, y)
+
+                name_list.append(name)
+                a_list.append(param[0])
+                b_list.append(param[1])
+                K_list.append(param[2])
+                d_x_list.append(d_x)
+                d_y_list.append(d_y)
+                R_list.append(R2)
+
+            df_param = pd.DataFrame({"name": name_list, "a": a_list, "b": b_list, "max_value": K_list,
+                                     "d_x": d_x_list, "d_y": d_y_list, "R2": R_list})
+            st.write(df_param)  # 一旦読み込んだデータのNaNを削除したよ
+            download(df_param)
+
+            # プルダウンによるグラフ表示
+            selected_name = st.selectbox("グラフ化するデータを選択してください", df_param['name'].unique())
+            if selected_name:
+                plt.figure(figsize=(10, 6))
+                plt.scatter(df2[selected_name + "_x"], df2[selected_name + "_y"], label="Data")
+                plt.plot(df2[selected_name + "_x"], df2[selected_name + "_fit"], 'r-', label="Fit")
+                plt.xlabel("X")
+                plt.ylabel("Y")
+                plt.title(f"Fit for {selected_name}")
+                plt.legend()
+                st.pyplot(plt)
+
+        except Exception as e:
+            st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
+
 
 #tab5用の初期化、実行に関わる関数==========================
 def initialize_session_state():
@@ -1729,23 +1918,25 @@ def tab6():
 #Streamlitを実行する関数
 def main():
     if login():
-        tabs = st.sidebar.radio("メニュー", ["Curve数式予測", "STL分解", "Logistic回帰", "TIME最適化", "Causal Impact"])
+        tabs = st.sidebar.radio("メニュー", ["主成分分析","Logistic回帰", "STL分解", "TIME最適化", "Causal Impact", "Curve数式予測"])
 
         # ログアウトボタン
         if st.button("ログアウト"):
             st.session_state.logged_in = False
             st.experimental_rerun()  # ログアウト後にページを再実行してログイン画面に戻る
 
-        if tabs == "Curve数式予測":
+        if tabs == "主成分分析":
             tab1()
-        elif tabs == "STL分解":
-            tab2()
         elif tabs == "Logistic回帰":
+            tab2()
+        elif tabs == "STL分解":
             tab3()
         elif tabs == "TIME最適化":
             tab4()
         elif tabs == "Causal Impact":
             tab5()
+        elif tabs == "Curve数式予測":
+            tab6()
 
 
 
