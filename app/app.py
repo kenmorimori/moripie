@@ -493,6 +493,53 @@ def tab3():
 
     st.subheader("係数・オッズ比・p値（説明変数）")
     st.dataframe(coef_df)
+    # === 段階別の“寄与”（Δ確率）を算出 ===
+    st.subheader("段階ごとの寄与（変数を動かしたときのΔ予測確率）")
+
+    # 他変数は平均（標準化ONなら0）に固定
+    X_base = X_std.mean().to_frame().T
+
+    def probs_at(dfrow):
+        p = res.predict(dfrow, which="prob")
+        # ndarray or DataFrame -> 1次元ベクトルに
+        if hasattr(p, "values"):
+            p = p.values
+        return np.ravel(p)
+
+    base_p = probs_at(X_base)
+
+    rows = []
+    for col in X_std.columns:
+        x1 = X_base.copy()
+        # 0/1ダミーなら 0→1 で比較、連続なら +1標準偏差（標準化OFFなら ±1σを自前で計算）
+        unique_vals = pd.unique(X[col].dropna())
+        if set(unique_vals).issubset({0,1}):
+            x1[col] = 1.0
+            x0 = X_base.copy()
+            x0[col] = 0.0
+            p0 = probs_at(x0)
+            p1 = probs_at(x1)
+            dp = p1 - p0
+            step_desc = "0→1"
+        else:
+            step = 1.0 if do_std else X[col].std(ddof=0)  # 標準化OFFなら元スケールで+1σ
+            x1[col] = X_base[col].iloc[0] + step
+            p1 = probs_at(x1)
+            dp = p1 - base_p
+            step_desc = f"+{('1σ' if not do_std else '1(標準化単位)')}"
+
+        # カテゴリ名とΔ確率を展開
+        for c, d in zip(res.model.endog.categories, dp):
+            rows.append({"variable": col, "category": str(c), "delta_prob": d, "change": step_desc})
+
+    effect_df = pd.DataFrame(rows).sort_values(["variable","category"])
+    st.dataframe(effect_df)
+
+    # 見やすいピボット（行=変数, 列=カテゴリ, 値=ΔP）
+    pivot_df = effect_df.pivot(index="variable", columns="category", values="delta_prob").fillna(0.0)
+    st.subheader("Δ予測確率（ピボット表示）")
+    st.dataframe(pivot_df.style.format("{:+.3f}"))
+
 
     # しきい値（カテゴリ間のカット点）
     cut_df = res.params.drop(index=X_std.columns, errors="ignore").to_frame(name="threshold")
@@ -535,12 +582,13 @@ def tab3():
         X_plot = pd.DataFrame(np.repeat(X_base.values, ngrid, axis=0), columns=X_std.columns)
         X_plot[target_var] = grid
 
-        p_plot = res.predict(X_plot, which="prob")  # [ngrid, n_classes]
+
+        proba = res.predict(X_plot, which="prob")
 
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(7, 4))
-        for i, c in enumerate(categories):
-            ax.plot(grid, p_plot[:, i], label=str(c))
+        for c in p_plot.columns:
+            ax.plot(grid, p_plot[c].values, label=c)
         ax.set_xlabel(f"{target_var}（標準化後）" if do_std else target_var)
         ax.set_ylabel("予測確率")
         ax.legend(title="カテゴリ")
