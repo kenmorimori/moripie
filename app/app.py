@@ -2730,9 +2730,9 @@ def main():
         elif tabs == "MMM（軽量版）":
             tab5()
         elif tabs == "STL分解":
-            tab10()
+            tab6()
         elif tabs == "TIME最適化":
-            tab7()
+            tab10()
         elif tabs == "Causal Impact":
             tab8()
         elif tabs == "Curve数式予測":
