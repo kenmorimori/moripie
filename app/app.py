@@ -8,7 +8,9 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+from statsmodels.miscmodels.ordinal_model import OrderedModel
 import numpy as np
+
 
 try:
     from causalimpact import CausalImpact
@@ -260,6 +262,7 @@ def tab1():
         st.info("PCが1つのため、バイプロットは表示しません。")
 
 
+
 def tab2():
     st.write("Logistic回帰")
 
@@ -375,8 +378,176 @@ def tab2():
         except Exception as e:
             st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
 
-
 def tab3():
+    st.write("順序Logistic回帰")
+
+    st.subheader("目的")
+    st.markdown("""
+    - 段階的（順序あり）な目的変数を、説明変数で説明・予測する。
+    """)
+
+    st.subheader("使用ケース")
+    st.markdown("""
+    - 満足度1〜5、評価A/B/C 等の**順序ありカテゴリ**を扱いたいとき。
+    """)
+
+    st.subheader("inputデータ")
+    st.markdown("""
+    - 1列目：目的変数（順序カテゴリ or 数値/ラベル）
+    - 2列目以降：説明変数（数値列）
+    """)
+
+    up = st.file_uploader("ファイル（CSV / XLSX）をアップロード", type=["csv", "xlsx"], key="ordlogit_file")
+    if up is None:
+        return
+
+    # --- 読み込み ---
+    try:
+        if up.name.lower().endswith(".xlsx"):
+            bytes_data = up.read()
+            xls = pd.ExcelFile(BytesIO(bytes_data))
+            sheet = "A_入力" if "A_入力" in xls.sheet_names else xls.sheet_names[0]
+            df = pd.read_excel(BytesIO(bytes_data), sheet_name=sheet)
+        else:
+            try:
+                df = pd.read_csv(up)
+            except UnicodeDecodeError:
+                up.seek(0)
+                df = pd.read_csv(up, encoding="shift-jis")
+    except Exception as e:
+        st.error(f"読み込みエラー: {e}")
+        return
+
+    if df.shape[1] < 2:
+        st.error("少なくとも2列（1列目=目的、2列目以降=説明変数）が必要です。")
+        return
+
+    st.write("データプレビュー：")
+    st.dataframe(df.head())
+
+    # --- y / X ---
+    y_raw = df.iloc[:, 0]
+    X = df.iloc[:, 1:].copy()
+    # 数値化（非数値は NaN）
+    X = X.apply(pd.to_numeric, errors='coerce')
+
+    # 欠損処理
+    na_opt = st.radio("欠損値の扱い", ["行ごとに削除（推奨）", "列平均で補完"], index=0, horizontal=True)
+    if na_opt == "行ごとに削除（推奨）":
+        data = pd.concat([y_raw, X], axis=1).dropna()
+        y_raw = data.iloc[:, 0]
+        X = data.iloc[:, 1:]
+    else:
+        X = X.fillna(X.mean())
+        ok = y_raw.notna()
+        y_raw = y_raw[ok]
+        X = X.loc[ok]
+
+    # 目的の順序を決める
+    uniq = pd.Index(pd.Series(y_raw).dropna().unique())
+    # 自動候補（数値っぽければ数値昇順、そうでなければ文字列昇順）
+    try:
+        uniq_sorted = pd.Index(sorted(pd.to_numeric(uniq, errors="raise")))
+    except Exception:
+        uniq_sorted = pd.Index(sorted(uniq.astype(str)))
+
+    st.subheader("目的変数の順序")
+    st.caption("※自動（昇順）を推奨。必要なら逆順に切り替え。")
+    reverse = st.checkbox("順序を逆転する", value=False)
+    categories = list(uniq_sorted[::-1] if reverse else uniq_sorted)
+
+    # カテゴリ型（順序あり）へ
+    cat_type = pd.api.types.CategoricalDtype(categories=categories, ordered=True)
+    y = y_raw.astype(cat_type)
+
+    # 標準化オプション
+    do_std = st.checkbox("説明変数を標準化（平均0, 分散1）", value=True)
+    if do_std:
+        from sklearn.preprocessing import StandardScaler
+        scaler = StandardScaler()
+        X_std = pd.DataFrame(scaler.fit_transform(X), columns=X.columns, index=X.index)
+    else:
+        X_std = X
+
+    # --- モデル学習（行列指定なので列名に記号があってもOK） ---
+    try:
+        model = OrderedModel(y, X_std, distr="logit")
+        res = model.fit(method="bfgs", disp=False)  # 収束ログを出したい時は disp=True
+    except Exception as e:
+        st.error(f"学習エラー: {e}")
+        return
+
+    st.subheader("推定結果サマリ")
+    st.text(res.summary().as_text())
+
+    # 係数と閾値（cut points）を分離
+    coef = res.params.reindex(X_std.columns, fill_value=np.nan)
+    pvals = res.pvalues.reindex(X_std.columns, fill_value=np.nan)
+    odds = np.exp(coef)
+
+    coef_df = pd.DataFrame({
+        "coef": coef,
+        "odds_ratio(単位増加)": odds,
+        "p_value": pvals
+    }).sort_values("p_value")
+
+    st.subheader("係数・オッズ比・p値（説明変数）")
+    st.dataframe(coef_df)
+
+    # しきい値（カテゴリ間のカット点）
+    cut_df = res.params.drop(index=X_std.columns, errors="ignore").to_frame(name="threshold")
+    st.subheader("しきい値（カテゴリ間のcut）")
+    st.dataframe(cut_df)
+
+    # 予測確率（全行）
+    prob = res.predict(X_std, which="prob")  # shape: [n_samples, n_classes]
+    prob = pd.DataFrame(prob, columns=[f"P({c})" for c in categories], index=X_std.index)
+    pred_class = prob.idxmax(axis=1).str.replace("P(", "", regex=False).str.replace(")", "", regex=False)
+
+    out = pd.concat([y_raw.reset_index(drop=True).rename("y_true"),
+                     pred_class.reset_index(drop=True).rename("y_pred"),
+                     prob.reset_index(drop=True)], axis=1)
+
+    st.subheader("予測結果（上位表示）")
+    st.dataframe(out.head())
+
+    # 簡易精度（一致率）
+    acc = (out["y_true"].astype(str) == out["y_pred"].astype(str)).mean()
+    st.write(f"**Accuracy（単純一致率）:** {acc:.3f}")
+
+    # ダウンロード
+    st.download_button("推定結果（係数）CSVをダウンロード",
+                       data=coef_df.to_csv().encode("utf-8"),
+                       file_name="ordlogit_coef.csv", mime="text/csv")
+    st.download_button("予測確率CSVをダウンロード",
+                       data=out.to_csv(index=False).encode("utf-8"),
+                       file_name="ordlogit_predictions.csv", mime="text/csv")
+
+    # 効果プロット：1変数を選んで他は平均（0）として曲線表示
+    if len(X_std.columns) >= 1:
+        st.subheader("効果プロット（選択変数 vs 予測確率）")
+        target_var = st.selectbox("変数を選択", list(X_std.columns))
+        ngrid = 50
+        x_min, x_max = X_std[target_var].min(), X_std[target_var].max()
+        grid = np.linspace(x_min, x_max, ngrid)
+
+        X_base = X_std.mean().to_frame().T  # 他変数は平均
+        X_plot = pd.DataFrame(np.repeat(X_base.values, ngrid, axis=0), columns=X_std.columns)
+        X_plot[target_var] = grid
+
+        p_plot = res.predict(X_plot, which="prob")  # [ngrid, n_classes]
+
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(7, 4))
+        for i, c in enumerate(categories):
+            ax.plot(grid, p_plot[:, i], label=str(c))
+        ax.set_xlabel(f"{target_var}（標準化後）" if do_std else target_var)
+        ax.set_ylabel("予測確率")
+        ax.legend(title="カテゴリ")
+        st.pyplot(fig)
+
+
+def tab4():
     st.write("STL分解")
     st.subheader("目的")
     text_21="""
@@ -476,7 +647,7 @@ def tab3():
 
 
 
-def tab4():
+def tab5():
     st.write("TIME最適化")
 
     st.subheader("目的")
@@ -990,7 +1161,7 @@ def tab4():
 
         except Exception as e:
             st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
-def tab5():
+def tab6():
     st.write("Causal Impact")
 
     st.subheader("目的")
@@ -1188,7 +1359,7 @@ def tab5():
     ax.set_xlabel("Date"); ax.set_ylabel("KPI"); ax.legend()
     st.pyplot(fig)
  
-def tab6():
+def tab7():
     st.write("Cuerve数式予測")
     st.subheader("目的")
     text_11="""
@@ -1953,15 +2124,16 @@ def main():
             tab1()
         elif tabs == "Logistic回帰":
             tab2()
-        elif tabs == "STL分解":
+        elif tabs == "順序Logistic回帰":
             tab3()
-        elif tabs == "TIME最適化":
+        elif tabs == "STL分解":
             tab4()
-        elif tabs == "Causal Impact":
+        elif tabs == "TIME最適化":
             tab5()
-        elif tabs == "Curve数式予測":
+        elif tabs == "Causal Impact":
             tab6()
-
+        elif tabs == "Curve数式予測":
+            tab7()
 
 
 #実行コード
