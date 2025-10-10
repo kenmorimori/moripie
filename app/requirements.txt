@@ -5,8 +5,6 @@ scipy
 scikit-learn
 matplotlib
 statsmodels
-lightweight_mmm>=0.2.7
-pymc>=5
 numpyro; platform_system=="Linux"  # 環境によって
 
 #
