@@ -676,7 +676,7 @@ def tab4():
     st.write("プレビュー：")
     st.dataframe(pd.concat([pd.Series(y, name=y_col), X_spend], axis=1).head())
 
-    # --- ハイパラ設定 ---
+        # --- ハイパラ設定（UIはそのまま使える） ---
     with st.expander("ハイパラ設定（必要なら変更）", expanded=False):
         alphas = st.multiselect("アドストック減衰 α 候補（0～0.99。高いほど長い遅効）",
                                 [0.3, 0.5, 0.7, 0.85, 0.9], default=[0.5, 0.7, 0.85])
@@ -691,23 +691,57 @@ def tab4():
 
     # --- 変換関数 ---
     def adstock_geometric(x, alpha):
-        # x: 1D array
         out = np.zeros_like(x, dtype=float)
         carry = 0.0
-        for t, val in enumerate(x):
+        for t, val in enumerate(np.asarray(x, dtype=float)):
             out[t] = val + alpha * carry
             carry = out[t]
         return out
 
     def hill_saturation(x, beta):
-        # 単位を揃えるため min-max 正規化 + Hill（軽量）
         x = np.asarray(x, dtype=float)
         if np.nanmax(x) == np.nanmin(x):
             return np.zeros_like(x)
         x_norm = (x - np.nanmin(x)) / (np.nanmax(x) - np.nanmin(x) + 1e-9)
         return x_norm ** (1.0 / beta)
 
-    # --- ハイパラ探索（各チャネルで同一α/βを採用する簡易版） ---
+    # --- NumPy版 RidgeCV（切片は自前で扱う） ---
+    def r2_score(y_true, y_pred):
+        y_true = np.asarray(y_true, dtype=float)
+        y_pred = np.asarray(y_pred, dtype=float)
+        ss_res = np.sum((y_true - y_pred) ** 2)
+        ss_tot = np.sum((y_true - np.mean(y_true)) ** 2) + 1e-12
+        return 1.0 - ss_res / ss_tot
+
+    def ridge_fit_predict(X_tr, y_tr, X_te, lam):
+        # 標準化（訓練統計量で）
+        mu = X_tr.mean(axis=0, keepdims=True)
+        sd = X_tr.std(axis=0, keepdims=True) + 1e-9
+        Xz_tr = (X_tr - mu) / sd
+        Xz_te = (X_te - mu) / sd
+
+        # 中心化して切片分離
+        y_mu = y_tr.mean()
+        y_center = y_tr - y_mu
+
+        # (X^T X + lam I)β = X^T y
+        XtX = Xz_tr.T @ Xz_tr
+        p = XtX.shape[0]
+        beta = np.linalg.solve(XtX + lam * np.eye(p), Xz_tr.T @ y_center)
+        intercept = y_mu  # 標準化後の特徴量は平均0
+
+        y_pred_tr = Xz_tr @ beta + intercept
+        y_pred_te = Xz_te @ beta + intercept
+        return beta, intercept, mu, sd, y_pred_tr, y_pred_te
+
+    def kfold_indices(n, k, seed=42):
+        rng = np.random.default_rng(seed)
+        idx = np.arange(n)
+        rng.shuffle(idx)
+        folds = np.array_split(idx, k)
+        return folds
+
+    # --- ハイパラ探索（各チャネルで同一 α/β を採用する簡易版） ---
     best_score = -np.inf
     best_cfg = None
     best_X = None
@@ -720,24 +754,42 @@ def tab4():
             # 飽和
             X_sat = np.column_stack([hill_saturation(X_ads[:, i], b) for i in range(X_ads.shape[1])])
 
-            # スケール調整（平均0 / 分散1）
-            mu = X_sat.mean(axis=0, keepdims=True)
-            sd = X_sat.std(axis=0, keepdims=True) + 1e-9
-            X_trans = (X_sat - mu) / sd
+            # ここでは CV 内で標準化するので、今はそのまま
+            n = len(y)
+            folds = kfold_indices(n, int(kfold), seed=42)
 
-            # CV Ridge
-            cv = KFold(n_splits=int(kfold), shuffle=True, random_state=42)
-            ridge = RidgeCV(alphas=lam_grid, cv=cv, fit_intercept=True, scoring="r2")
-            ridge.fit(X_trans, y)
-            score = ridge.best_score_
+            best_lam = None
+            best_cv = -np.inf
+            best_fit = None
 
-            if score > best_score:
-                best_score = score
-                best_cfg = (a, b, ridge.alpha_, mu, sd, ridge.coef_, ridge.intercept_)
+            for lam in lam_grid:
+                scores = []
+                for vi in range(len(folds)):
+                    val_idx = folds[vi]
+                    tr_idx = np.setdiff1d(np.arange(n), val_idx, assume_unique=False)
+
+                    X_tr, y_tr = X_sat[tr_idx], y[tr_idx]
+                    X_va, y_va = X_sat[val_idx], y[val_idx]
+
+                    beta, intercept, mu, sd, y_pred_tr, y_pred_va = ridge_fit_predict(X_tr, y_tr, X_va, lam)
+                    scores.append(r2_score(y_va, y_pred_va))
+
+                cv_mean = float(np.mean(scores))
+                if cv_mean > best_cv:
+                    best_cv = cv_mean
+                    best_lam = lam
+
+            # ベスト lam で全データにフィット（最終モデル）
+            beta, intercept, mu, sd, y_pred_tr, _ = ridge_fit_predict(X_sat, y, X_sat, best_lam)
+
+            if best_cv > best_score:
+                best_score = best_cv
+                best_cfg = (a, b, best_lam, mu, sd, beta, intercept)
+                # 最終の標準化特徴量
+                X_trans = (X_sat - mu) / sd
                 best_X = X_trans
 
     a_star, b_star, lam_star, mu_star, sd_star, coef_star, intercept_star = best_cfg
-
     st.success(f"Best CV R² = {best_score:.3f} | alpha={a_star} / beta={b_star} / ridge={lam_star}")
 
     # --- 学習済みで寄与分解 ---
