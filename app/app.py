@@ -1123,9 +1123,14 @@ def tab5():
     st.pyplot(fig)
 
     # --- 係数テーブル（解釈用） ---
+    st.dataframe(contrib_df.head().round(3))
+
     coef_tbl = pd.DataFrame({"channel": spend_cols, "coef_on_transformed": coef_star})
     st.subheader("係数（変換後特徴量上）")
-    st.dataframe(coef_tbl.style.format("{:.4f}"))
+    st.dataframe(coef_tbl.assign(
+        coef_on_transformed=lambda d: d["coef_on_transformed"].round(4)
+    ))
+
 
     # --- 予算シミュ（全体×±x%） ---
     st.subheader("簡易予算シミュレーション")
