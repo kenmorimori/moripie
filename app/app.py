@@ -1,28 +1,23 @@
-# ====== 起動診断ブロック（先頭に貼る） ======
-import streamlit as st, time, traceback, importlib.util
+import streamlit as st, traceback
 
-st.set_page_config(layout="wide")
-st.write("BOOT: top of app.py")
+# まず必ず作っておく（NameError回避）
+_SEM_OK: bool = False
+_SEM_ERR = None  # (err_name, err_msg, traceback_text)
 
+# ---- semopy 互換インポート（旧/新API両対応）----
 try:
-    spec = importlib.util.find_spec("semopy")
-    st.write("semopy spec:", spec)
-    if spec is not None:
-        import semopy
-        st.write("semopy version:", getattr(semopy, "__version__", "?"))
+    from semopy import ModelMeans, Optimizer
+    from semopy.inspector import inspect
+    try:
+        from semopy.report import gather_statistics          # 旧API
+    except ImportError:
+        from semopy.inspector import inspect as gather_statistics  # 新APIをエイリアス
+    _SEM_OK = True
 except Exception as e:
-    st.error(f"semopy import error: {type(e).__name__}: {e}")
-    st.code("".join(traceback.format_exc()))
+    _SEM_OK = False
+    _SEM_ERR = (type(e).__name__, str(e), "".join(traceback.format_exc()))
+# ---------------------------------------------------------
 
-# 無限リラン防止のフラグ
-if "init_once" not in st.session_state:
-    st.session_state.init_once = True
-    st.write("INIT ONCE: first run")
-else:
-    st.write("INIT ONCE: subsequent run")
-
-st.write("CHECKPOINT A: before main()")
-# ====== /診断ブロック ======
 
 import importlib.util, sys, subprocess
 if importlib.util.find_spec("semopy") is None:
@@ -42,7 +37,7 @@ from sklearn.model_selection import KFold
 from statsmodels.miscmodels.ordinal_model import OrderedModel
 import numpy as np
 
-
+st.write("CHECKPOINT B: after layout/sidebar")
 
 try:
     from causalimpact import CausalImpact
@@ -923,8 +918,12 @@ def tab5():
     """)
 
     if not _SEM_OK:
-        st.error("semopy が見つかりません。`pip install semopy` を実行してください。")
-        return
+        st.error("semopy を読み込めませんでした。")
+        if _SEM_ERR:
+            name, msg, tb = _SEM_ERR
+            st.write(f"Import error: {name}: {msg}")
+            st.code(tb)
+        st.stop()
 
     up = st.file_uploader("CSV / XLSX をアップロード", type=["csv","xlsx"], key="sem_file")
     if up is None: 
