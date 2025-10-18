@@ -37,7 +37,6 @@ from sklearn.model_selection import KFold
 from statsmodels.miscmodels.ordinal_model import OrderedModel
 import numpy as np
 
-st.write("CHECKPOINT B: after layout/sidebar")
 
 try:
     from causalimpact import CausalImpact
