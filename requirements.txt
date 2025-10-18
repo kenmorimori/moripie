@@ -1,14 +1,7 @@
-streamlit
-pandas
-openpyxl
-scipy
-scikit-learn
-matplotlib
-statsmodels
-semopy
-graphviz
-numpyro; platform_system=="Linux"  # 環境によって
-
-
-#
-pycausalimpact @ https://github.com/WillianFuks/causalimpact/archive/refs/heads/master.zip
+streamlit==1.37.1
+pandas==2.2.2
+numpy==1.26.4
+scipy==1.11.4
+statsmodels==0.14.2
+semopy==2.3.11
+graphviz==0.20.3
