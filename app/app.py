@@ -1,3 +1,21 @@
+# --- TEMP 1: 実行時に semopy が無ければ入れる（保険） ---
+import importlib.util, sys, subprocess
+if importlib.util.find_spec("semopy") is None:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-cache-dir", "semopy==2.3.11"])
+# --------------------------------------------------------
+
+# --- TEMP 2: 失敗理由をそのまま表示（原因の見える化） ---
+import streamlit as st, traceback
+try:
+    from semopy import ModelMeans, Optimizer
+    from semopy.inspector import inspect
+    from semopy.report import gather_statistics
+    _SEM_OK = True
+except Exception as e:
+    _SEM_OK = False
+    st.error(f"semopy の import 失敗: {type(e).__name__}: {e}")
+    st.code("".join(traceback.format_exc()))
+# -------------------------------------------------
 import importlib.util, sys, subprocess
 if importlib.util.find_spec("semopy") is None:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "semopy==2.3.11"])
@@ -15,14 +33,6 @@ from sklearn.linear_model import RidgeCV
 from sklearn.model_selection import KFold
 from statsmodels.miscmodels.ordinal_model import OrderedModel
 import numpy as np
-# 先頭の import 群の近くに追加
-try:
-    from semopy import ModelMeans, Optimizer
-    from semopy.inspector import inspect
-    from semopy.report import gather_statistics
-    _SEM_OK = True
-except Exception:
-    _SEM_OK = False
 
 
 
