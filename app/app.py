@@ -2914,7 +2914,7 @@ def main():
         elif tabs == "Causal Impact":
             tab9()
         elif tabs == "Curve数式予測":
-            tab9()
+            tab10()
 
 
 #実行コード
