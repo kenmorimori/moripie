@@ -8,13 +8,20 @@ if importlib.util.find_spec("semopy") is None:
 import streamlit as st, traceback
 try:
     from semopy import ModelMeans, Optimizer
-    from semopy.inspector import inspect
-    from semopy.report import gather_statistics
+    from semopy.inspector import inspect  # ← これはそのまま使う前提
+
+    # 互換インポート: 旧API(semopy.report.gather_statistics) or 新API(semopy.inspector.inspect)
+    try:
+        from semopy.report import gather_statistics            # 旧APIがある場合
+    except ImportError:
+        from semopy.inspector import inspect as gather_statistics  # 新APIにエイリアス
+
     _SEM_OK = True
 except Exception as e:
     _SEM_OK = False
     st.error(f"semopy の import 失敗: {type(e).__name__}: {e}")
     st.code("".join(traceback.format_exc()))
+
 # -------------------------------------------------
 import importlib.util, sys, subprocess
 if importlib.util.find_spec("semopy") is None:
@@ -997,7 +1004,7 @@ def tab5():
 
         # 適合度指標
         try:
-            stats = gather_statistics(model, data)
+            stats = get_sem_stats(model, data)
             fit_df = pd.DataFrame({
                 "metric": ["CFI","TLI","RMSEA","SRMR","AIC","BIC","DOF","n_params"],
                 "value": [stats.get("CFI"), stats.get("TLI"), stats.get("RMSEA"),
