@@ -5,7 +5,10 @@ scipy
 scikit-learn
 matplotlib
 statsmodels
+semopy
+graphviz
 numpyro; platform_system=="Linux"  # 環境によって
+
 
 #
 pycausalimpact @ https://github.com/WillianFuks/causalimpact/archive/refs/heads/master.zip
