@@ -12,6 +12,15 @@ from sklearn.linear_model import RidgeCV
 from sklearn.model_selection import KFold
 from statsmodels.miscmodels.ordinal_model import OrderedModel
 import numpy as np
+# 先頭の import 群の近くに追加
+try:
+    from semopy import ModelMeans, Optimizer
+    from semopy.inspector import inspect
+    from semopy.report import gather_statistics
+    _SEM_OK = True
+except Exception:
+    _SEM_OK = False
+
 
 
 try:
@@ -877,8 +886,150 @@ def tab4():
         data=out_df.to_csv(index=False).encode("utf-8-sig"),
         file_name="reg_contributions.csv", mime="text/csv")
 
-
 def tab5():
+    import streamlit as st
+    import pandas as pd
+    import numpy as np
+    from io import BytesIO
+
+    st.write("共分散構造分析（SEM）")
+
+    st.subheader("入力フォーマット")
+    st.markdown("""
+    - 1列目：**目的変数（y）**
+    - 2列目以降：**説明変数（x1, x2, ...）**
+    - 1行目はヘッダー（列名）
+    """)
+
+    if not _SEM_OK:
+        st.error("semopy が見つかりません。`pip install semopy` を実行してください。")
+        return
+
+    up = st.file_uploader("CSV / XLSX をアップロード", type=["csv","xlsx"], key="sem_file")
+    if up is None: 
+        return
+
+    # --- 読み込み ---
+    try:
+        if up.name.lower().endswith(".xlsx"):
+            bytes_data = up.read()
+            xls = pd.ExcelFile(BytesIO(bytes_data))
+            sheet = "A_入力" if "A_入力" in xls.sheet_names else xls.sheet_names[0]
+            df = pd.read_excel(BytesIO(bytes_data), sheet_name=sheet)
+        else:
+            try:
+                df = pd.read_csv(up)
+            except UnicodeDecodeError:
+                up.seek(0)
+                df = pd.read_csv(up, encoding="shift-jis")
+    except Exception as e:
+        st.error(f"読み込みエラー: {e}")
+        return
+
+    if df.shape[1] < 2:
+        st.error("少なくとも2列（1列目=目的、2列目以降=説明変数）が必要です。")
+        return
+
+    st.write("プレビュー：")
+    st.dataframe(df.head())
+
+    # y / X
+    y_name = df.columns[0]
+    X_names = list(df.columns[1:])
+    # 数値化・欠損処理
+    y = pd.to_numeric(df.iloc[:, 0], errors="coerce")
+    X = df.iloc[:, 1:].apply(pd.to_numeric, errors="coerce")
+    na_opt = st.radio("欠損値の扱い", ["行ごとに削除（推奨）", "列平均で補完"], index=0, horizontal=True)
+    if na_opt == "行ごとに削除（推奨）":
+        data = pd.concat([y, X], axis=1).dropna()
+    else:
+        X = X.fillna(X.mean())
+        data = pd.concat([y, X], axis=1).dropna(subset=[y_name])
+
+    data.columns = [y_name] + X_names  # 安全に列名揃え
+
+    st.markdown("### モデル指定（lavaan 風）")
+    st.caption("例）潜在因子F1をx1+x2で測定し、yはF1とx3から説明：  `F1 =~ x1 + x2`  /  `y ~ F1 + x3`")
+    default_syntax = f"""# 測定モデル（必要なら）
+# F1 =~ {(' + '.join(X_names[:2])) if len(X_names)>=2 else ''}
+
+# 構造モデル（自動モデルは下のチェックで作れます）
+{y_name} ~ {' + '.join(X_names)}
+"""
+    use_auto = st.checkbox("自動モデル（観測変数→目的変数のパスのみ）を使う", value=True)
+    syntax = st.text_area("モデル式（semopy 形式）", value=default_syntax, height=160)
+
+    if use_auto:
+        syntax = f"{y_name} ~ " + " + ".join(X_names)
+
+    st.code(syntax, language="markdown")
+
+    if st.button("推定を実行"):
+        try:
+            # 平均構造あり（切片推定）
+            model = ModelMeans(syntax)
+            model.fit(data)
+        except Exception as e:
+            st.error(f"推定エラー: {e}")
+            return
+
+        # 係数（推定値・SE・z・p）
+        try:
+            est = inspect(model)  # path, loadings, intercept などまとめ
+        except Exception:
+            est = model.parameters_dataframe
+
+        st.subheader("推定結果（係数）")
+        st.dataframe(est)
+
+        # 適合度指標
+        try:
+            stats = gather_statistics(model, data)
+            fit_df = pd.DataFrame({
+                "metric": ["CFI","TLI","RMSEA","SRMR","AIC","BIC","DOF","n_params"],
+                "value": [stats.get("CFI"), stats.get("TLI"), stats.get("RMSEA"),
+                          stats.get("SRMR"), stats.get("AIC"), stats.get("BIC"),
+                          stats.get("DoF"), stats.get("n_params")]
+            })
+            st.subheader("適合度指標")
+            st.dataframe(fit_df)
+            st.caption("目安：CFI/TLI≥0.90、RMSEA≤0.08、SRMR≤0.08（文脈依存）")
+        except Exception:
+            st.info("適合度統計の算出に失敗しました。")
+
+        # 標準化解（推奨：解釈しやすい）
+        try:
+            std_est = inspect(model, std_est=True)
+            st.subheader("標準化解（標準化係数）")
+            st.dataframe(std_est)
+        except Exception:
+            pass
+
+        # 予測・残差（yのみ表示）
+        try:
+            y_pred = model.predict_factors(data)  # 潜在因子推定
+        except Exception:
+            y_pred = pd.DataFrame()
+
+        try:
+            implied = model.implied_covariance  # 暗黙の共分散
+        except Exception:
+            implied = None
+
+        # 出力ダウンロード
+        @st.cache_data
+        def _csv_bytes(df_):
+            return df_.to_csv(index=False).encode("utf-8-sig")
+
+        st.download_button("係数テーブルをCSVでダウンロード",
+                           data=_csv_bytes(est), file_name="sem_params.csv", mime="text/csv")
+
+        if 'std_est' in locals():
+            st.download_button("標準化解をCSVでダウンロード",
+                               data=_csv_bytes(std_est), file_name="sem_std_params.csv", mime="text/csv")
+
+
+def tab6():
     st.write("MMM（軽量版）")
 
     st.subheader("目的")
@@ -1151,7 +1302,7 @@ def tab5():
 
 
 
-def tab6():
+def tab7():
     st.write("STL分解")
     st.subheader("目的")
     text_21="""
@@ -1251,7 +1402,7 @@ def tab6():
 
 
 
-def tab7():
+def tab8():
     st.write("TIME最適化")
 
     st.subheader("目的")
@@ -1765,7 +1916,7 @@ def tab7():
 
         except Exception as e:
             st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
-def tab8():
+def tab9():
     st.write("Causal Impact")
 
     st.subheader("目的")
@@ -1963,7 +2114,7 @@ def tab8():
     ax.set_xlabel("Date"); ax.set_ylabel("KPI"); ax.legend()
     st.pyplot(fig)
  
-def tab9():
+def tab10():
     st.write("Cuerve数式予測")
     st.subheader("目的")
     text_11="""
@@ -2698,7 +2849,7 @@ def display_execution():
             st.write("割り付けトラッキングデータ:")
             st.write(st.session_state["allocated_program_data"])
 
-def tab10():
+def tab11():
     """アプリケーションのメイン関数"""
     initialize_session_state()
 
@@ -2717,7 +2868,7 @@ def tab10():
 #Streamlitを実行する関数
 def main():
     if login():
-        tabs = st.sidebar.radio("メニュー", ["主成分分析","Logistic回帰", "順序Logistic回帰","重回帰（自動選択）","MMM（軽量版）","STL分解", "TIME最適化", "Causal Impact", "Curve数式予測"])
+        tabs = st.sidebar.radio("メニュー", ["主成分分析","Logistic回帰", "順序Logistic回帰","重回帰（自動選択）","共分散構造分析（SEM）","MMM（軽量版）","STL分解", "TIME最適化", "Causal Impact", "Curve数式予測"])
 
         # ログアウトボタン
         if st.button("ログアウト"):
@@ -2732,14 +2883,16 @@ def main():
             tab3()
         elif tabs == "重回帰（自動選択）":
             tab4()
-        elif tabs == "MMM（軽量版）":
+        elif tabs == "共分散構造分析（SEM）":
             tab5()
-        elif tabs == "STL分解":
+        elif tabs == "MMM（軽量版）":
             tab6()
+        elif tabs == "STL分解":
+            tab7()
         elif tabs == "TIME最適化":
-            tab10()
+            tab11()
         elif tabs == "Causal Impact":
-            tab8()
+            tab9()
         elif tabs == "Curve数式予測":
             tab9()
 
