@@ -1,6 +1,8 @@
+# --- TEMP: ensure semopy is present at runtime ---
 import importlib.util, sys, subprocess
 if importlib.util.find_spec("semopy") is None:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "semopy==2.3.11"])
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-input", "semopy==2.3.11"])
+# -------------------------------------------------
 import streamlit as st
 import pandas as pd
 from io import StringIO, BytesIO
@@ -9,6 +11,17 @@ from sklearn.metrics import r2_score  # 決定係数計算用
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+
+try:
+    from semopy import ModelMeans, Optimizer
+    from semopy.inspector import inspect
+    from semopy.report import gather_statistics
+    _SEM_OK = True
+except Exception as e:
+    _SEM_OK = False
+    import streamlit as st
+    st.error(f"semopy の import 失敗: {type(e).__name__}: {e}")
+
 
 # ユーザーデータの作成（実際には安全な方法で保存する必要があります）
 user_data = {
