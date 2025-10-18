@@ -1,28 +1,29 @@
-# --- TEMP 1: 実行時に semopy が無ければ入れる（保険） ---
-import importlib.util, sys, subprocess
-if importlib.util.find_spec("semopy") is None:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-cache-dir", "semopy==2.3.11"])
-# --------------------------------------------------------
+# ====== 起動診断ブロック（先頭に貼る） ======
+import streamlit as st, time, traceback, importlib.util
 
-# --- TEMP 2: 失敗理由をそのまま表示（原因の見える化） ---
-import streamlit as st, traceback
+st.set_page_config(layout="wide")
+st.write("BOOT: top of app.py")
+
 try:
-    from semopy import ModelMeans, Optimizer
-    from semopy.inspector import inspect  # ← これはそのまま使う前提
-
-    # 互換インポート: 旧API(semopy.report.gather_statistics) or 新API(semopy.inspector.inspect)
-    try:
-        from semopy.report import gather_statistics            # 旧APIがある場合
-    except ImportError:
-        from semopy.inspector import inspect as gather_statistics  # 新APIにエイリアス
-
-    _SEM_OK = True
+    spec = importlib.util.find_spec("semopy")
+    st.write("semopy spec:", spec)
+    if spec is not None:
+        import semopy
+        st.write("semopy version:", getattr(semopy, "__version__", "?"))
 except Exception as e:
-    _SEM_OK = False
-    st.error(f"semopy の import 失敗: {type(e).__name__}: {e}")
+    st.error(f"semopy import error: {type(e).__name__}: {e}")
     st.code("".join(traceback.format_exc()))
 
-# -------------------------------------------------
+# 無限リラン防止のフラグ
+if "init_once" not in st.session_state:
+    st.session_state.init_once = True
+    st.write("INIT ONCE: first run")
+else:
+    st.write("INIT ONCE: subsequent run")
+
+st.write("CHECKPOINT A: before main()")
+# ====== /診断ブロック ======
+
 import importlib.util, sys, subprocess
 if importlib.util.find_spec("semopy") is None:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "semopy==2.3.11"])
