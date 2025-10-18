@@ -1,3 +1,6 @@
+import importlib.util, sys, subprocess
+if importlib.util.find_spec("semopy") is None:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "semopy==2.3.11"])
 import streamlit as st
 import pandas as pd
 from io import StringIO, BytesIO
