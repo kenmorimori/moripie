@@ -102,7 +102,7 @@ def login():
     return False
 
 
-def tab1():
+def tab_PCA():
     st.write("主成分分析（PCA）")
 
     # === セクション：説明 ===
@@ -290,7 +290,7 @@ def tab1():
 
 
 
-def tab2():
+def tab_Logistic():
     st.write("Logistic回帰")
 
     st.subheader("目的")
@@ -405,7 +405,7 @@ def tab2():
         except Exception as e:
             st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
 
-def tab3():
+def tab_LogisticNum():
     st.write("順序Logistic回帰")
 
     st.subheader("目的")
@@ -637,7 +637,7 @@ def tab3():
         ax.legend(title="カテゴリ")
         st.pyplot(fig)
 
-def tab4():
+def tab_MultipleRegression():
     st.write("重回帰（自動変数選択）")
 
     st.subheader("目的")
@@ -901,7 +901,7 @@ def tab4():
         data=out_df.to_csv(index=False).encode("utf-8-sig"),
         file_name="reg_contributions.csv", mime="text/csv")
 
-def tab5():
+def tab_SEM():
     import streamlit as st
     import pandas as pd
     import numpy as np
@@ -1048,7 +1048,7 @@ def tab5():
                                data=_csv_bytes(std_est), file_name="sem_std_params.csv", mime="text/csv")
 
 
-def tab6():
+def tab_MMM():
     st.write("MMM（軽量版）")
 
     st.subheader("目的")
@@ -1321,7 +1321,7 @@ def tab6():
 
 
 
-def tab7():
+def tab_STL():
     st.write("STL分解")
     st.subheader("目的")
     text_21="""
@@ -1421,7 +1421,7 @@ def tab7():
 
 
 
-def tab8():
+def tab_TIME():
     st.write("TIME最適化")
 
     st.subheader("目的")
@@ -1935,7 +1935,7 @@ def tab8():
 
         except Exception as e:
             st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
-def tab9():
+def tab_CausalImpact():
     st.write("Causal Impact")
 
     st.subheader("目的")
@@ -2132,8 +2132,176 @@ def tab9():
     ax.set_title("Actual vs Counterfactual (CausalImpact)")
     ax.set_xlabel("Date"); ax.set_ylabel("KPI"); ax.legend()
     st.pyplot(fig)
- 
-def tab10():
+
+def tab_factor():
+    st.write("因子分析（Factor Analysis）")
+
+    # === 説明セクション ===
+    st.subheader("目的")
+    st.markdown("""
+    - 多数の質問項目やイメージ項目から**潜在因子（価値観・心理構造）を抽出**し、  
+      データの背後にある構造を理解する。
+    """)
+
+    st.subheader("使用ケース")
+    st.markdown("""
+    - ブランドイメージ調査やNPS調査の**心理構造**を把握したい。  
+    - 多数の項目を少数の要因にまとめて**解釈しやすくしたい**。  
+    - セグメンテーション前に、価値観や態度を**因子スコアに圧縮**したい。
+    """)
+
+    st.subheader("inputデータ")
+    st.markdown("""
+    - **数値列のみが対象**  
+    - 1列目以降に「評価項目・イメージ項目」などを並べた形式  
+    - CSV / Excel (A_入力シート対応)
+    """)
+
+    st.subheader("アウトプット説明")
+    st.markdown("""
+    - **因子負荷量**：どの項目がどの因子に強く乗るか（解釈の中心）  
+    - **因子スコア**：各サンプルの因子の位置  
+    - **固有値・寄与率**（必要に応じて追加可能）  
+    - **因子数は任意選択（1〜10）**
+    """)
+
+    # === ファイル読み込み ===
+    up = st.file_uploader("CSV / XLSX をアップロード", type=["csv","xlsx"])
+    if up is None:
+        return
+
+    try:
+        if up.name.lower().endswith(".xlsx"):
+            df = pd.read_excel(up)
+        else:
+            df = pd.read_csv(up)
+    except:
+        st.error("ファイル読み込みエラー")
+        return
+
+    st.write("データプレビュー：")
+    st.dataframe(df.head())
+
+    # 数値列のみ使用
+    X = df.select_dtypes(include=[np.number])
+    if X.shape[1] == 0:
+        st.error("数値列がありません（因子分析は数値項目のみ対応）")
+        return
+
+    n_factor = st.slider("抽出する因子数", 1, min(10, X.shape[1]), 2)
+
+    # === 因子分析 ===
+    from sklearn.decomposition import FactorAnalysis
+    model = FactorAnalysis(n_components=n_factor)
+    F = model.fit_transform(X)
+
+    loadings = pd.DataFrame(
+        model.components_.T,
+        index=X.columns,
+        columns=[f"Factor{i+1}" for i in range(n_factor)]
+    )
+
+    st.subheader("因子負荷量（Factor Loadings）")
+    st.dataframe(loadings.style.format("{:.3f}"))
+
+    score_df = pd.DataFrame(F, columns=[f"Factor{i+1}" for i in range(n_factor)])
+    st.subheader("因子スコア（Factor Scores）")
+    st.dataframe(score_df.head())
+
+    # ダウンロード
+    st.download_button("因子負荷量CSV", loadings.to_csv().encode("utf-8"), "factor_loadings.csv")
+    st.download_button("因子スコアCSV", score_df.to_csv().encode("utf-8"), "factor_scores.csv")
+
+def tab_ca():
+    st.write("コレスポンデンス分析（Correspondence Analysis）")
+
+    # === 説明セクション ===
+    st.subheader("目的")
+    st.markdown("""
+    - **カテゴリ×カテゴリの対応関係**を、2次元マップとして可視化し、  
+      どの属性がどのカテゴリに近いかを把握する。
+    """)
+
+    st.subheader("使用ケース")
+    st.markdown("""
+    - ブランド × イメージワード の**ポジショニングマップ**  
+    - 属性 × 購入理由、店舗 × 利用理由 などの関係整理  
+    - クロス集計表を**視覚的に理解**したい
+    """)
+
+    st.subheader("inputデータ")
+    st.markdown("""
+    - 行：ブランド / 属性  
+    - 列：イメージワード / 購買理由  
+    - **クロス集計表**の形式（CSV / Excel）
+    - 1列目は index（ブランド名など）
+    """)
+
+    st.subheader("アウトプット説明")
+    st.markdown("""
+    - **行プロット座標**：ブランド・属性側の布置  
+    - **列プロット座標**：イメージワード・理由側の布置  
+    - **CAマップ（対応分析プロット）**：行列の距離を可視化
+    """)
+
+    # === ファイル読み込み ===
+    up = st.file_uploader("クロス集計表（CSV / XLSX）", type=["csv","xlsx"])
+    if up is None:
+        return
+
+    try:
+        if up.name.lower().endswith(".xlsx"):
+            df = pd.read_excel(up, index_col=0)
+        else:
+            df = pd.read_csv(up, index_col=0)
+    except:
+        st.error("ファイル読み込みエラー")
+        return
+
+    st.write("入力表：")
+    st.dataframe(df)
+
+    # === CA 実行 ===
+    try:
+        import prince
+    except:
+        st.error("ライブラリ 'prince' がありません。`pip install prince` を実行してください")
+        return
+
+    ca = prince.CA(n_components=2)
+    ca = ca.fit(df)
+
+    row_coords = ca.row_coordinates(df)
+    col_coords = ca.column_coordinates(df)
+
+    st.subheader("行（Row）座標")
+    st.dataframe(row_coords)
+
+    st.subheader("列（Column）座標")
+    st.dataframe(col_coords)
+
+    # === プロット ===
+    fig, ax = plt.subplots(figsize=(7,7))
+
+    # 行
+    ax.scatter(row_coords[0], row_coords[1], label="Rows")
+    for i, txt in enumerate(row_coords.index):
+        ax.text(row_coords.iloc[i, 0], row_coords.iloc[i, 1], txt)
+
+    # 列
+    ax.scatter(col_coords[0], col_coords[1], marker="x", label="Columns")
+    for i, txt in enumerate(col_coords.index):
+        ax.text(col_coords.iloc[i, 0], col_coords.iloc[i, 1], txt)
+
+    ax.axhline(0, color="gray", linewidth=0.5)
+    ax.axvline(0, color="gray", linewidth=0.5)
+    ax.set_title("Correspondence Analysis Map")
+    ax.legend()
+
+    st.pyplot(fig)
+
+
+def tab_curve():
     st.write("Cuerve数式予測")
     st.subheader("目的")
     text_11="""
@@ -2267,7 +2435,7 @@ def tab10():
             st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
 
 
-#tab5用の初期化、実行に関わる関数==========================
+#tab_TIME用の初期化、実行に関わる関数==========================
 def initialize_session_state():
     """セッションステートの初期化"""
     defaults = {
@@ -2868,7 +3036,7 @@ def display_execution():
             st.write("割り付けトラッキングデータ:")
             st.write(st.session_state["allocated_program_data"])
 
-def tab11():
+def tab_time():
     """アプリケーションのメイン関数"""
     initialize_session_state()
 
@@ -2887,7 +3055,23 @@ def tab11():
 #Streamlitを実行する関数
 def main():
     if login():
-        tabs = st.sidebar.radio("メニュー", ["主成分分析","Logistic回帰", "順序Logistic回帰","重回帰（自動選択）","共分散構造分析（SEM）","MMM（軽量版）","STL分解", "TIME最適化", "Causal Impact", "Curve数式予測"])
+        tabs = st.sidebar.radio(
+            "メニュー",
+            [
+                "主成分分析",
+                "因子分析",
+                "コレスポンデンス分析",
+                "共分散構造分析（SEM）",
+                "Logistic回帰",
+                "順序Logistic回帰",
+                "重回帰（自動選択）",
+                "MMM（軽量版）",
+                "STL分解",  
+                "TIME最適化",
+                "Causal Impact",
+                "Curve数式予測",
+            ]
+        )
 
         # ログアウトボタン
         if st.button("ログアウト"):
@@ -2895,25 +3079,29 @@ def main():
             st.experimental_rerun()  # ログアウト後にページを再実行してログイン画面に戻る
 
         if tabs == "主成分分析":
-            tab1()
-        elif tabs == "Logistic回帰":
-            tab2()
-        elif tabs == "順序Logistic回帰":
-            tab3()
-        elif tabs == "重回帰（自動選択）":
-            tab4()
+            tab_PCA()
+        elif tabs == "因子分析":
+            tab_factor()
+        elif tabs == "コレスポンデンス分析":
+            tab_ca()
         elif tabs == "共分散構造分析（SEM）":
-            tab5()
+            tab_SEM()
+        elif tabs == "Logistic回帰":
+            tab_Logistic()
+        elif tabs == "順序Logistic回帰":
+            tab_LogisticNum()
+        elif tabs == "重回帰（自動選択）":
+            tab_MultipleRegression()   
         elif tabs == "MMM（軽量版）":
-            tab6()
+            tab_MMM()
         elif tabs == "STL分解":
-            tab7()
+            tab_STL()
         elif tabs == "TIME最適化":
-            tab11()
+            tab_time()
         elif tabs == "Causal Impact":
-            tab9()
+            tab_CausalImpact()
         elif tabs == "Curve数式予測":
-            tab10()
+            tab_curve()
 
 
 #実行コード
