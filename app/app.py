@@ -2048,6 +2048,7 @@ def tab_TIME():
 
         except Exception as e:
             st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
+
 def tab_CausalImpact():
     st.write("Causal Impact")
 
@@ -2072,6 +2073,57 @@ def tab_CausalImpact():
       4) **非出稿エリアKPI（control）**
     - 例：`date, flag, kpi_treated, kpi_control`
     """)
+
+    st.subheader("アウトプット説明")
+    st.markdown("""
+    ### ■ 1. Actual（実績値：treated）
+    - 出稿エリアの実測 KPI  
+    - “実際にはこう動いた” の基準ライン。
+
+    ### ■ 2. Counterfactual（予測値：counterfactual_pred）
+    - 「もし出稿していなかったら」の推定値  
+    - コントロール指標（非出稿エリア）を使って構築  
+    - 介入後は **予測値 ≠ 実績値** となり、差分が「広告の効果」。
+
+    ### ■ 3. Point Effect（瞬間効果）
+    - 各日（or 各行）における  
+    **実績 − カウンターファクト** の差分  
+    - 一日ごと・時間ごとにどれだけリフトしたかを可視化。
+
+    ### ■ 4. Cumulative Effect（累積効果）
+    - 介入開始以降の効果の累積合計  
+    - “広告を出した結果、合計でどれだけ上積みされたか？”  
+    - 最も意思決定で使われる出力。
+
+    ### ■ 5. Summary（サマリー）
+    CausalImpact が自動で生成するテキストレポートで、  
+    次の内容がまとめられる：
+
+    - **平均効果**（post期間の平均 point_effect）  
+    - **合計効果**（累積効果 = cumulative effect）  
+    - **相対効果 (%)**  
+    - **効果が統計的に有意かどうか**  
+    - ベイズモデルに基づく **95%予測区間** など
+
+    ### ■ 6. Report（自然言語レポート）
+    - 効果が有意か、期間全体での寄与、推定方法  
+    - 広告効果検証のレポートにそのまま貼れる文章  
+
+    ### ■ 7. Actual vs Counterfactual グラフ
+    横軸：日付  
+    - 青：実績  
+    - オレンジ：出稿しない世界線での予測  
+    - 点線：介入開始日  
+    この差が **広告によるリフト（因果効果）** を意味する。
+
+    ### ■ 8. ダウンロード用 CSV
+    以下の列を含む：
+    - actual_treated（実績）
+    - counterfactual_pred（反実仮想予測）
+    - point_effect（瞬間効果）
+    - cumulative_effect（累積効果）
+    """)
+
 
     if not _CAUSALIMPACT_OK:
         st.error("causalimpact が未インストールです。先に環境へインストールしてください。")
