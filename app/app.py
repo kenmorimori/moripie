@@ -41,6 +41,24 @@ from PIL import Image
 logo = Image.open("app/moripie_logo1.png")
 st.sidebar.image(logo, use_column_width=True)
 
+st.markdown(
+    """
+    <style>
+    /* 全体の背景色変更 */
+    [data-testid="stAppViewContainer"] {
+        background-color: #f4f6fa;
+    }
+
+    /* サイドバーの背景色（おそらく既に設定と同じだが念のため） */
+    [data-testid="stSidebar"] {
+        background-color: #f4f6fa;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
 try:
     from causalimpact import CausalImpact
     _CAUSALIMPACT_OK = True
