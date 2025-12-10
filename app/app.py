@@ -38,7 +38,7 @@ from statsmodels.miscmodels.ordinal_model import OrderedModel
 import numpy as np
 from PIL import Image
 
-logo = Image.open("moripie/app/moripie_logo.png")
+logo = Image.open("./moripie_logo.png")
 st.sidebar.image(logo, use_column_width=True)
 
 try:
