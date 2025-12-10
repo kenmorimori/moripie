@@ -41,22 +41,32 @@ from PIL import Image
 logo = Image.open("app/moripie_logo1.png")
 st.sidebar.image(logo, use_column_width=True)
 
-st.markdown(
-    """
-    <style>
-    /* 全体の背景色変更 */
-    [data-testid="stAppViewContainer"] {
-        background-color: #f4f6fa;
+st.markdown("""
+<style>
+
+    /* カード全体のデザイン */
+    .card {
+        background-color: #ffffff;
+        padding: 2rem;
+        margin-top: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);  /* カードに影をつける */
     }
 
-    /* サイドバーの背景色（おそらく既に設定と同じだが念のため） */
-    [data-testid="stSidebar"] {
-        background-color: #f4f6fa;
+    /* カード内タイトル */
+    .card h2 {
+        margin-top: 0;
+        color: #2e7d32;
     }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+
+    /* カード内の見出し */
+    .card h3 {
+        color: #388e3c;
+    }
+
+</style>
+""", unsafe_allow_html=True)
+
 
 
 try:
