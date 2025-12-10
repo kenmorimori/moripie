@@ -745,15 +745,64 @@ def tab_MultipleRegression():
     # オプション
     st.subheader("探索設定")
     col1, col2, col3 = st.columns(3)
-    with col1:
-        criterion = st.selectbox("最適化基準", ["CV-RMSE(最小)", "CV-R2(最大)", "AIC(最小)", "BIC(最小)", "調整R2(最大)"], index=0)
-    with col2:
-        kfold = st.number_input("CV 分割数", min_value=3, max_value=10, value=5)
-    with col3:
-        max_vars = st.number_input("最大使用変数数（計算抑制用）", min_value=1, max_value=min(p, 15), value=min(10, p))
 
-    method = st.radio("探索法", ["前進選択（高速）", "ベストサブセット（上限kまで）"], index=0, horizontal=True)
-    std_on = st.checkbox("説明変数を標準化して学習（推奨）", value=True)
+    with col1:
+        criterion = st.selectbox(
+            "最適化基準",
+            ["CV-RMSE(最小)", "CV-R2(最大)", "AIC(最小)", "BIC(最小)", "調整R2(最大)"],
+            index=0,
+            help="""
+            ▼最適化基準
+            CV-RMSE：予測誤差が最小となるモデルを選択（推奨）
+            CV-R2：説明力が最大となるモデルを選択
+            AIC/BIC：モデルの複雑さにペナルティを与え、シンプルなモデルを選択
+            調整R2：説明変数の数を考慮したR2（分かりやすい指標）
+            """
+        )
+
+    with col2:
+        kfold = st.number_input(
+            "CV 分割数",
+            min_value=3, max_value=10, value=5,
+            help="""
+            ▼CV分割数
+            データを何分割して交差検証を行うかの指定。
+            5～10 が一般的で、値が大きいほど汎化性能が安定します。
+            """
+        )
+
+    with col3:
+        max_vars = st.number_input(
+            "最大使用変数数（計算抑制用）",
+            min_value=1, max_value=min(p, 15), value=min(10, p),
+            help="""
+            ▼最大使用変数数
+            モデルが採用する説明変数の上限。
+            過学習を防ぎ、計算負荷を抑えるための設定です。
+            """
+        )
+
+    method = st.radio(
+        "探索法",
+        ["前進選択（高速）", "ベストサブセット（上限kまで）"],
+        index=0,
+        horizontal=True,
+        help="""
+        ▼探索法
+        ● 前進選択：一つずつ変数を追加して最適モデルを探索（高速）
+        ● ベストサブセット：全ての変数組み合わせから最適モデルを探索（正確だが計算重い）
+        """
+    )
+
+    std_on = st.checkbox(
+        "説明変数を標準化して学習（推奨）",
+        value=True,
+        help="""
+        ▼標準化
+        説明変数のスケールを揃えることで、重回帰の係数比較や
+        変数選択の安定性が向上します。（推奨設定）
+        """
+    )
 
     # --- 補助関数 ---
     def kfold_indices(n, k, seed=42):
