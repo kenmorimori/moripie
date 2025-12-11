@@ -46,38 +46,58 @@ st.sidebar.image(logo, use_column_width=True)
 st.markdown("""
 <style>
 
-    /* カード全体のデザイン */
-    .card {
-        background-color: #ffffff;       /* 白 */
-        padding: 2rem;
-        margin-top: 1.5rem;
-        border-radius: 12px;             /* 角丸 */
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* 影 */
-        line-height: 1.6;
-    }
+ /* =====================================
+      カード全体のデザイン（背景＝緑、文字＝白）
+ ===================================== */
+.card {
+    background-color: #2e7d32;       /* MORIPIEグリーン */
+    padding: 2rem;
+    margin-top: 1.5rem;
+    border-radius: 12px;             /* 角丸 */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    line-height: 1.6;
+    color: #ffffff !important;       /* 文字色を白に固定 */
+}
 
-    /* カード内タイトル（h2） */
-    .card h2 {
-        margin-top: 0;
-        font-weight: 600;
-        color: #2e7d32;     /* MORIPIEグリーン */
-    }
+/* =====================================
+      カード内タイトル（h2）
+ ===================================== */
+.card h2 {
+    margin-top: 0;
+    font-weight: 600;
+    color: #ffffff !important;       /* 白文字 */
+}
 
-    /* セクション見出し（h3） */
-    .card h3 {
-        margin-top: 1.4rem;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-        color: #388e3c;     /* 少し明るいグリーン */
-    }
+/* =====================================
+      セクション見出し（h3）
+ ===================================== */
+.card h3 {
+    margin-top: 1.4rem;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #e8f5e9 !important;       /* 少し明るい白（柔らかい）*/
+}
 
-    /* リスト調整 */
-    .card ul {
-        padding-left: 1.2rem;
-    }
+/* =====================================
+      リスト（ul, li）
+ ===================================== */
+.card ul {
+    padding-left: 1.4rem;
+}
+
+.card li {
+    margin-bottom: 0.4rem;
+    color: #ffffff !important;       /* 白文字 */
+}
+
+/* 太字（b） */
+.card b {
+    color: #ffffff !important;
+}
 
 </style>
 """, unsafe_allow_html=True)
+
 
 
 st.markdown("""
