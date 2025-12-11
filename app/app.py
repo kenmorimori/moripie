@@ -2719,6 +2719,9 @@ def tab_ca():
 
 
 def tab_curve():
+    latex_svg = latex_to_svg_base64(
+        r"y = \frac{K}{1 + \left(a \left(\frac{x}{10^{dx}}\right)^b\right)} \cdot 10^{dy}"
+    )
     show_card(
     """
     <h2>Curve数式予測</h2>
