@@ -123,7 +123,20 @@ def show_card(content_html: str):
         unsafe_allow_html=True
     )
 
+st.markdown("""
+<style>
+/* メインコンテンツ（右側）背景を黒に */
+[data-testid="stAppViewContainer"] {
+    background-color: #000000 !important;
+}
 
+/* カードとの余白を確保 */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+</style>
+""", unsafe_allow_html=True)
 
 
 try:
@@ -507,23 +520,31 @@ def tab_Logistic():
             st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
 
 def tab_LogisticNum():
-    st.write("順序Logistic回帰")
 
-    st.subheader("目的")
-    st.markdown("""
-    - 段階的（順序あり）な目的変数を、説明変数で説明・予測する。
-    """)
+    show_card(
+    """
+    <h2>順序Logistic回帰</h2>
 
-    st.subheader("使用ケース")
-    st.markdown("""
-    - 満足度1〜5、評価A/B/C 等の**順序ありカテゴリ**を扱いたいとき。
-    """)
+    <h3>目的</h3>
+    <ul>
+        <li>段階的（順序あり）な目的変数を、説明変数で説明・予測する。</li>
+    </ul>
 
-    st.subheader("inputデータ")
-    st.markdown("""
-    - 1列目：目的変数（順序カテゴリ or 数値/ラベル）
-    - 2列目以降：説明変数（数値列）
-    """)
+    <h3>使用ケース</h3>
+    <ul>
+        <li>満足度1〜5、評価A/B/C などの <b>順序ありカテゴリ</b> を扱いたいとき。</li>
+    </ul>
+
+    <h3>inputデータ</h3>
+    <ul>
+        <li>1列目：目的変数（順序カテゴリ or 数値/ラベル）</li>
+        <li>2列目以降：説明変数（数値列）</li>
+    </ul>
+    """
+    )
+
+    # ↓ ここから先は従来コード（変更不要）
+
 
     up = st.file_uploader("ファイル（CSV / XLSX）をアップロード", type=["csv", "xlsx"], key="ordlogit_file")
     if up is None:
@@ -739,54 +760,66 @@ def tab_LogisticNum():
         st.pyplot(fig)
 
 def tab_MultipleRegression():
-    st.write("重回帰（自動変数選択）")
+    show_card(
+    """
+    <h2>重回帰（自動変数選択）</h2>
 
-    st.subheader("目的")
-    st.markdown("""
-    - 多数の説明変数の中から **最適な組み合わせを自動で探索**し、  
-    最も予測精度が高い回帰モデルを構築する。
-    - 人手では困難な **変数選択・モデル選択（feature selection）** を  
-    CV（クロスバリデーション）や情報量基準（AIC/BIC）を使って自動化する。
-    """)
+    <h3>目的</h3>
+    <ul>
+        <li>多数の説明変数の中から <b>最適な組み合わせを自動で探索</b> し、最も予測精度が高い回帰モデルを構築する。</li>
+        <li>人手では困難な <b>変数選択・モデル選択（feature selection）</b> を CV（クロスバリデーション）や情報量基準（AIC/BIC）で自動化する。</li>
+    </ul>
 
-    st.subheader("使用ケース")
-    st.markdown("""
-    - 多くの説明変数の中から **どれが本当に効いているのか** を知りたい  
-    - 多重共線性が疑われ、**変数を最適に減らしたい**  
-    - CV（汎化性能）を見ながら **過学習しないモデル** を作りたい  
-    - 広告・媒体別の **影響度シェア（寄与）の算出** を行いたい  
-    - 売上や指標の **ドライバー分析（Driver Analysis）** をしたい
-    """)
+    <h3>使用ケース</h3>
+    <ul>
+        <li>多くの説明変数の中から <b>どれが本当に効いているのか</b> を知りたい</li>
+        <li>多重共線性が疑われ、<b>変数を最適に減らしたい</b></li>
+        <li>CV（汎化性能）を見ながら <b>過学習しないモデル</b> を作りたい</li>
+        <li>広告・媒体別の <b>影響度シェア（寄与）の算出</b> を行いたい</li>
+        <li>売上や指標の <b>ドライバー分析（Driver Analysis）</b> をしたい</li>
+    </ul>
 
-    st.subheader("inputデータ")
-    st.markdown("""
-    - **1列目：目的変数（y）**（売上、認知得点、CV数など）
-    - **2列目以降：説明変数（x1, x2, ...）**（媒体費用、接触指標、属性など）
-    - CSV / Excel（`A_入力` シートがあれば優先）
-    - 数値列のみ自動抽出し、非数値列は除外
-    - 欠損値処理は  
-    - 行ごと削除（推奨）  
-    - 列平均補完  
-    のどちらか選択可能
-    """)
+    <h3>inputデータ</h3>
+    <ul>
+        <li><b>1列目：目的変数（y）</b>（売上、認知得点、CV数など）</li>
+        <li><b>2列目以降：説明変数（x1, x2, ...）</b>（媒体費用、接触指標、属性など）</li>
+        <li>CSV / Excel（<code>A_入力</code> シートがあれば優先）</li>
+        <li>数値列のみ自動抽出し、非数値列は除外</li>
+        <li>欠損値処理は以下から選択：</li>
+        <ul>
+            <li>行ごと削除（推奨）</li>
+            <li>列平均補完</li>
+        </ul>
+    </ul>
 
-    st.subheader("アウトプット説明")
-    st.markdown("""
-    - **選択された最適モデル（使用された説明変数）**
-    - **係数（元スケールに戻して出力）**
-    - 標準化あり/なしを選択可能
-    - **モデル評価指標**
-    - CV-R²  
-    - CV-RMSE  
-    - AIC / BIC  
-    - 調整R²  
-    - **寄与分解（Contribution Table）**
-    - 変数ごとの寄与量（impact）  
-    - 平均寄与シェア（どの変数が重要か）  
-    - **CSV ダウンロード**
-    - 係数表  
-    - 予測値・寄与分解表  
-    """)
+    <h3>アウトプット説明</h3>
+    <ul>
+        <li><b>選択された最適モデル（使用された説明変数）</b></li>
+        <li><b>係数（元スケールに戻して出力）</b></li>
+        <li>標準化あり/なしを選択可能</li>
+
+        <li><b>モデル評価指標</b></li>
+        <ul>
+            <li>CV-R²</li>
+            <li>CV-RMSE</li>
+            <li>AIC / BIC</li>
+            <li>調整R²</li>
+        </ul>
+
+        <li><b>寄与分解（Contribution Table）</b></li>
+        <ul>
+            <li>変数ごとの寄与量（impact）</li>
+            <li>平均寄与シェア（どの変数が重要か）</li>
+        </ul>
+
+        <li><b>CSVダウンロード</b></li>
+        <ul>
+            <li>係数表</li>
+            <li>予測値・寄与分解表</li>
+        </ul>
+    </ul>
+    """
+    )
 
 
     up = st.file_uploader("CSV / XLSX をアップロード", type=["csv", "xlsx"], key="regsel_file")
@@ -1096,49 +1129,50 @@ def tab_SEM():
     import numpy as np
     from io import BytesIO
 
-    st.write("共分散構造分析（SEM）")
+    show_card("""
+    <h2>共分散構造分析（SEM）</h2>
 
-    st.subheader("目的")
-    st.markdown("""
-    - **仮説モデル**（因果関係を含む構造）と **測定モデル**（潜在因子と観測変数の関係）を同時に推定し、  
-    データがモデルにどれだけ適合しているかを評価する。
-    - 回帰では表現できない **複雑な因果ネットワーク** や **潜在変数（心理指標・ブランド因子）** を扱える点が特徴。
-    """)
+    <h3>目的</h3>
+    <ul>
+        <li><b>仮説モデル</b>（因果関係を含む構造）と <b>測定モデル</b>（潜在因子と観測変数の関係）を同時に推定し、データがモデルにどれだけ適合しているかを評価する。</li>
+        <li>回帰では表現できない <b>複雑な因果ネットワーク</b> や <b>潜在変数（心理指標・ブランド因子）</b> を扱える点が特徴。</li>
+    </ul>
 
-    st.subheader("使用ケース")
-    st.markdown("""
-    - 「認知 → 好意 → 行動意図」のような **段階モデル（AISAS 等）** を検証したい  
-    - ブランドイメージの複数項目から潜在因子（例：安心性・革新性）を定義し、  
-    その因子が **KPI にどう効いているか**を分析したい  
-    - 実験・施策における **メディエーション（媒介分析）** を行いたい  
-    - 回帰分析よりも **理論ベースのモデルを明確に示したい場合**（レポート・プレゼンにも強い）
-    """)
+    <h3>使用ケース</h3>
+    <ul>
+        <li>「認知 → 好意 → 行動意図」のような <b>段階モデル（AISAS 等）</b> を検証したい</li>
+        <li>ブランドイメージの複数項目から潜在因子（例：安心性・革新性）を定義し、それが <b>KPI にどう効くか</b> を分析したい</li>
+        <li>実験・施策における <b>メディエーション（媒介分析）</b> を行いたい</li>
+        <li>回帰分析よりも <b>理論ベースのモデルを明確に示したい場合</b>（レポート・プレゼンに強い）</li>
+    </ul>
 
-    st.subheader("inputデータ")
-    st.markdown("""
-    - **1列目：目的変数（y）**  
-    - **2列目以降：説明変数（x1, x2, ...）**  
-    - 1行目はヘッダー（列名）。  
-    - 数値列のみを対象（潜在変数を測る質問項目など）  
-    - Excel の場合は **A_入力シートがあると優先して読み込む**
-    """)
+    <h3>inputデータ</h3>
+    <ul>
+        <li><b>1列目：目的変数（y）</b></li>
+        <li><b>2列目以降：説明変数（x1, x2, ...）</b></li>
+        <li>1行目はヘッダー（列名）</li>
+        <li>数値列のみを対象（潜在変数を測る質問項目など）</li>
+        <li>Excel の場合は <b>A_入力</b> シートがあると優先して読み込む</li>
+    </ul>
 
-    st.subheader("アウトプット説明")
-    st.markdown("""
-    - **パス係数（regression paths）**  
-    - 変数間の因果的影響の強さ  
-    - **因子負荷量（loadings）**  
-    - 観測変数が潜在因子をどれだけ反映しているか  
-    - **標準化係数（std_est）**  
-    - 単位の異なる指標を比較しやすい  
-    - **適合度指標（Fit indices）**  
-    - **CFI / TLI**（0.90以上が目安）  
-    - **RMSEA**（0.08以下が良い）  
-    - **SRMR**（0.08以下が良い）  
-    - **AIC / BIC**（モデル比較に使用）  
-    - **係数表・適合度・標準化解を CSV ダウンロード可能**
-    """)
+    <h3>アウトプット説明</h3>
+    <ul>
+        <li><b>パス係数（regression paths）</b>：変数間の因果的影響の強さ</li>
+        <li><b>因子負荷量（loadings）</b>：観測変数が潜在因子をどれだけ反映しているか</li>
+        <li><b>標準化係数（std_est）</b>：単位の異なる指標を比較しやすい</li>
 
+        <li><b>適合度指標（Fit indices）</b></li>
+        <ul>
+            <li><b>CFI / TLI</b>（0.90以上が目安）</li>
+            <li><b>RMSEA</b>（0.08以下が良い）</li>
+            <li><b>SRMR</b>（0.08以下が良い）</li>
+            <li><b>AIC / BIC</b>（モデル比較に使用）</li>
+        </ul>
+
+        <li><b>CSVダウンロード可能</b>（係数表・適合度・標準化解）</li>
+    </ul>
+    """
+    )
     if not _SEM_OK:
         st.error("semopy を読み込めませんでした。")
         if _SEM_ERR:
@@ -1272,59 +1306,86 @@ def tab_SEM():
 
 
 def tab_MMM():
-    st.write("MMM（軽量版）")
+    show_card("""
+    <h2>MMM（軽量版）</h2>
 
-    st.subheader("目的")
-    st.markdown("""
-    - 広告投資額（TV・Web・OOH など）が **KPI（売上・CV・指標）にどれだけ寄与しているか** を定量化する。
-    - **アドストック（広告の遅効性）** と **飽和（逓減効果）** を考慮した  
-    より現実的な反応曲線を推定し、媒体別の **真の効果量（貢献度 / ROI）** を明らかにする。
-    - 過去の投資実績を分析し、**最適な投下配分** や **追加投資の効果（限界効用）** を可視化する。
-    """)
+    <h3>目的</h3>
+    <ul>
+        <li>広告投資額（TV・Web・OOH など）が <b>KPI（売上・CV・指標）にどれだけ寄与しているか</b> を定量化する。</li>
+        <li><b>アドストック（広告の遅効性）</b> と <b>飽和（逓減効果）</b> を考慮し、  
+        より現実的な反応曲線を推定し、媒体別の <b>真の効果量（貢献度 / ROI）</b> を明らかにする。</li>
+        <li>過去の投資実績から、<b>最適な投下配分</b> や <b>追加投資の限界効果（限界効用）</b> を可視化する。</li>
+    </ul>
 
-    st.subheader("使用ケース")
-    st.markdown("""
-    - 複数媒体の投資額とKPIを使い、**媒体別ROI** を求めたい  
-    - 投資を増減した際の **予測インパクト** を見たい（10%増ならどれだけKPIが伸びる？）  
-    - 代理店・広告主のレポートでよく使われる **寄与分解（contribution analysis）** を行いたい  
-    - 広告効果が **翌週・翌月に効く** といった遅効性をモデルに入れたい  
-    - **予算シミュレーション**（今後の投資配分のヒント）にも使いたい
-    """)
+    <h3>使用ケース</h3>
+    <ul>
+        <li>複数媒体の投資額とKPIを使い、<b>媒体別ROI</b> を求めたい</li>
+        <li>投資を増減した際の <b>予測インパクト</b> を見たい（例：10%増ならどれだけ伸びる？）</li>
+        <li>広告主レポートで一般的な <b>寄与分解（contribution analysis）</b> を行いたい</li>
+        <li>広告効果の <b>遅効性（翌週・翌月に効く）</b> をモデルに入れたい</li>
+        <li><b>予算シミュレーション</b>（今後の投資配分の参考）にも使いたい</li>
+    </ul>
 
-    st.subheader("inputデータ")
-    st.markdown("""
-    - **1列目：date（日付 or 週次・月次）**  
-    - **2列目：y（KPI：売上・CV・検索数など）**  
-    - **3列目以降：媒体別の費用（TV_spend, search_spend, display_spend など）**  
-    - 例：  
-    | date | y | tv_spend | web_spend | sns_spend | … |
-    - CSV / XLSX のどちらにも対応  
-    - 欠損値は自動除外 or 平均補完  
-    - 数値列以外は除外して処理
-    """)
+    <h3>inputデータ</h3>
+    <ul>
+        <li><b>1列目：date（日付 / 週次 / 月次）</b></li>
+        <li><b>2列目：y（KPI：売上・CV・検索数など）</b></li>
+        <li><b>3列目以降：媒体費用（tv_spend / web_spend / sns_spend …）</b></li>
+        <li>例：</li>
+    </ul>
 
-    st.subheader("アウトプット説明")
-    st.markdown("""
-    - **推定モデル（反応曲線）**
-    - アドストック処理：広告の蓄積効果  
-    - Hill式飽和：費用を増やしても伸びにくくなる現象を再現  
-    - **媒体別の係数（影響度）**  
-    - 変換後特徴量上の係数（効果の強さ）  
-    - **寄与分解（Contribution）**
-    - 各媒体が y に与えた寄与額を算出  
-    - 平均寄与シェア（どの媒体が最も貢献したか）  
-    - **反応曲線（Response Curve）**
-    - 投入額に応じて KPI がどう変化するかを可視化  
-    - **限界効用（dROI）**
-    - 投資増加1単位あたりの追加効果  
-    - 最適投資の検討に非常に有用  
-    - **予算シミュレーション**
-    - 総予算を ±◯% 変更した場合の KPI 変化を自動計算  
-    - **CSV ダウンロード**
-    - 寄与分解表  
-    - 係数表  
-    - 予測データ
-    """)
+    <table>
+    <tr><th>date</th><th>y</th><th>tv_spend</th><th>web_spend</th><th>sns_spend</th></tr>
+    <tr><td>2024-01-01</td><td>1200</td><td>300</td><td>200</td><td>150</td></tr>
+    </table>
+
+    <ul>
+        <li>CSV / Excel に対応</li>
+        <li>欠損値は自動除外 or 平均補完</li>
+        <li>数値列以外は自動除外</li>
+    </ul>
+
+    <h3>アウトプット説明</h3>
+    <ul>
+        <li><b>推定モデル（反応曲線）</b></li>
+        <ul>
+            <li>アドストック処理：広告の蓄積効果を再現</li>
+            <li>Hill式：費用増加に伴う飽和（伸びにくさ）を再現</li>
+        </ul>
+
+        <li><b>媒体別の係数（影響度）</b>：変換後特徴量の係数</li>
+
+        <li><b>寄与分解（Contribution）</b></li>
+        <ul>
+            <li>各媒体が y に与えた寄与額</li>
+            <li>平均寄与シェア（最も貢献した媒体は？）</li>
+        </ul>
+
+        <li><b>反応曲線（Response Curve）</b></li>
+        <ul>
+            <li>投入額に応じて KPI がどう変化するか</li>
+        </ul>
+
+        <li><b>限界効用（dROI）</b></li>
+        <ul>
+            <li>追加投資1単位あたりの増加効果</li>
+            <li>最適投資の検討に必須</li>
+        </ul>
+
+        <li><b>予算シミュレーション</b></li>
+        <ul>
+            <li>総予算を ±○% 変えた場合の KPI 変化を自動計算</li>
+        </ul>
+
+        <li><b>CSV ダウンロード</b></li>
+        <ul>
+            <li>寄与分解表</li>
+            <li>係数表</li>
+            <li>予測データ</li>
+        </ul>
+    </ul>
+    """
+    )
 
 
     up = st.file_uploader("CSV / XLSX をアップロード", type=["csv", "xlsx"], key="mmm_lite_file")
@@ -1585,31 +1646,48 @@ def tab_MMM():
 
 
 def tab_STL():
-    st.write("STL分解")
-    st.subheader("目的")
-    text_21="""
-    - 時系列データをトレンド、季節成分、残差に分解することにより、データの特性を把握する。"""
-    st.markdown(text_21)
-    st.subheader("使用ケース")
-    text_22="""
-    - GoogleトレンドやDS.INSIGHTなどからKWボリュームの過去傾向を分析し、季節性や長期トレンドを確認。"""
-    st.markdown(text_22)
-    st.subheader("inputデータ")
-    text_23="""
-    - 時系列での、期間とKWボリュームを入力。"""
-    if st.button("Click me to go to folder"):
-        st.write('[Go to folder](https://hakuhodody-my.sharepoint.com/:f:/r/personal/sd000905_hakuhodody-holdings_co_jp/Documents/%E7%B5%B1%E5%90%88AP%E5%B1%80_AaaS1-4%E9%83%A8_%E5%85%B1%E6%9C%89OneDrive/04.%20%E3%83%84%E3%83%BC%E3%83%AB%EF%BC%8F%E3%82%BD%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3/megupy/01.input?csf=1&web=1&e=waFpBB)')
-    st.markdown(text_23)
-    st.subheader("アウトプット説明")
-    text_24="""
-    - **_raw**: 元の時系列データ
-    - **_trend**: トレンド成分
-    - **_seasonal**: 季節成分
-    - **_resid**: 残差成分（トレンド&季節成分を除去した後のデータ）"""
-    st.markdown(text_24)
-    text_25="""
-    - GoogleトレンドやDS.INSIGHTなどからKWボリュームの過去傾向を分析し、季節性や長期トレンドを確認。週別のデータも、月別のデータでもコードが判断してくれるので、どちらのケースでも使用可能。"""
-    st.markdown(text_25)
+    sshow_card("""
+    <h2>STL分解</h2>
+
+    <h3>目的</h3>
+    <ul>
+        <li>時系列データを <b>トレンド・季節性・残差</b> に分解し、  
+            データの構造（周期性・長期傾向・異常値など）を把握する。</li>
+    </ul>
+
+    <h3>使用ケース</h3>
+    <ul>
+        <li>Googleトレンド・DS.INSIGHT などから KW ボリュームの  
+            <b>季節性や長期トレンド</b> を確認したいとき</li>
+    </ul>
+
+    <h3>inputデータ</h3>
+    <ul>
+        <li><b>時系列データ</b>（期間 × KW ボリューム）を入力</li>
+        <li>週次・月次どちらでも自動判別して処理します</li>
+    </ul>
+
+    <p>
+    <a href="https://hakuhodody-my.sharepoint.com/:f:/r/personal/sd000905_hakuhodody-holdings_co_jp/Documents/%E7%B5%B1%E5%90%88AP%E5%B1%80_AaaS1-4%E9%83%A8_%E5%85%B1%E6%9C%89OneDrive/04.%20%E3%83%84%E3%83%BC%E3%83%AB%EF%BC%8F%E3%82%BD%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3/megupy/01.input?csf=1&web=1&e=waFpBB" target="_blank">
+    🔗 入力フォルダを開く
+    </a>
+    </p>
+
+    <h3>アウトプット説明</h3>
+    <ul>
+        <li><b>_raw</b>：元の時系列データ</li>
+        <li><b>_trend</b>：トレンド成分（長期的な増減）</li>
+        <li><b>_seasonal</b>：季節成分（周期的変動）</li>
+        <li><b>_resid</b>：残差成分（トレンド＋季節性を除去した後のノイズ）</li>
+    </ul>
+
+    <p>
+    KW ボリュームの過去傾向を把握し、<b>季節性 or 長期トレンド</b> が  
+    どれほど影響しているかを可視化できます。  
+    <strong>週次・月次データどちらにも対応</strong>し、STLが自動的に処理します。
+    </p>
+    """
+    )
 
 
     if 'uploaded_file_tab2' not in st.session_state:
@@ -1685,39 +1763,48 @@ def tab_STL():
 
 
 def tab_TIME():
-    st.write("TIME最適化")
+    show_card("""
+    <h2>TIME最適化</h2>
 
-    st.subheader("目的")
-    text_41="""
-    - TIMEの複数素材割り付けを最適化"""
-    st.markdown(text_41)
-    st.subheader("使用ケース")
-    text_42="""
-    - 複数ブランドをTIMEで放映する場合
-    - レギュラータイム/FTB/単発タイムなど固定の枠がある場合"""
-    st.markdown(text_42)
-    st.subheader("inputデータ")
-    text_43="""
-    - A-Dシートをそれぞれ入力"""
-    if st.button("Click me to go to folder"):
-        st.write('[Go to folder](https://hakuhodody.sharepoint.com/:f:/s/msteams_d8fd35/Eu6cDQ4W-t5KlsMGSjLhfQQBaYubS13B_Ge2FzODeaZO-A?e=lvq7tE)')
-    st.markdown(text_43)
-    st.subheader("アウトプット説明")
-    text_44="""
-    - ブランドごとの最適な番組フォーメーション
-    - 番組追加による累積リーチ
-    - 最適化後のブランドごとの予算"""
-    st.markdown(text_44)
-    text_45="""
-    - AシートとCシートの番組IDは漏れなくダブりなく"""
-    st.markdown(text_45)
+    <h3>目的</h3>
+    <ul>
+        <li>TIMEの複数素材割り付けを最適化する。</li>
+    </ul>
 
-    # タイトル
+    <h3>使用ケース</h3>
+    <ul>
+        <li>複数ブランドを TIME で放映する場合</li>
+        <li>レギュラータイム / FTB / 単発タイムなど固定枠がある場合</li>
+    </ul>
+
+    <h3>inputデータ</h3>
+    <ul>
+        <li>A〜Dシートをそれぞれ入力</li>
+    </ul>
+
+    <p>
+    <a href="https://hakuhodody.sharepoint.com/:f:/s/msteams_d8fd35/Eu6cDQ4W-t5KlsMGSjLhfQQBaYubS13B_Ge2FzODeaZO-A?e=lvq7tE" target="_blank">
+    🔗 入力フォルダを開く
+    </a>
+    </p>
+
+    <h3>アウトプット説明</h3>
+    <ul>
+        <li>ブランドごとの最適番組フォーメーション</li>
+        <li>番組追加による累積リーチ</li>
+        <li>最適化後のブランド別予算</li>
+        <li>AシートとCシートの番組IDは「漏れなく・ダブりなく」処理</li>
+    </ul>
+    """
+    )
+
+    # ---- ここから下は従来の処理（そのままでOK） ----
+
     st.title("モード選択")
 
     # プルダウン選択肢
     options = ["reach cost", "reach", "target_cost"]
-    mode = st.selectbox("モードを選択してください", options, index=2)  # indexでデフォルト選択
+    mode = st.selectbox("モードを選択してください", options, index=2)
 
     # アップロードされたファイルがあるか確認
     if "uploaded_file" not in st.session_state:
@@ -2200,80 +2287,91 @@ def tab_TIME():
             st.error(f"ファイルを読み込む際にエラーが発生しました: {e}")
 
 def tab_CausalImpact():
-    st.write("Causal Impact")
+    show_card(
+    """
+    <h2>Causal Impact</h2>
 
-    st.subheader("目的")
-    st.markdown("""
-    - 広告出稿がKPIに与えた因果的影響を定量化する。
-    - 出稿が無かった場合（カウンターファクト）のKPI推移を推定して、実績との差分＝リフトを把握する。
-    """)
+    <h3>目的</h3>
+    <ul>
+        <li>広告出稿がKPIに与えた <b>因果的影響</b> を定量化する。</li>
+        <li>出稿が無かった場合（カウンターファクト）のKPI推移を推定し、  
+            実績との差分＝<b>リフト効果</b> を把握する。</li>
+    </ul>
 
-    st.subheader("使用ケース")
-    st.markdown("""
-    - **TVCM/キャンペーン効果検証**（出稿エリア vs 非出稿エリア）。
-    - **介入日**を境に **前半が0、以降はずっと1** のフラグで評価。
-    """)
+    <h3>使用ケース</h3>
+    <ul>
+        <li><b>TVCM / キャンペーン効果検証</b>（出稿エリア vs 非出稿エリア）</li>
+        <li><b>介入日以降が1になるフラグ</b> を用いた因果推定</li>
+    </ul>
 
-    st.subheader("inputデータ")
-    st.markdown("""
-    - 必須列（ヘッダー名は任意）  
-      1) **日付列**（例: `date` / `Date` / `日付`）  
-      2) **出稿フラグ**（0=未出稿, 1=出稿。※ある時点から全て1）  
-      3) **出稿エリアKPI（treated）**  
-      4) **非出稿エリアKPI（control）**
-    - 例：`date, flag, kpi_treated, kpi_control`
-    """)
+    <h3>inputデータ</h3>
+    <ul>
+        <li>必須列（ヘッダー名は任意）</li>
+        <ul>
+            <li><b>日付列</b>（例: date / Date / 日付）</li>
+            <li><b>出稿フラグ</b>（0=未出稿 / 1=出稿開始以降）</li>
+            <li><b>出稿エリアKPI（treated）</b></li>
+            <li><b>非出稿エリアKPI（control）</b></li>
+        </ul>
+        <li>例：<code>date, flag, kpi_treated, kpi_control</code></li>
+    </ul>
 
-    st.subheader("アウトプット説明")
-    st.markdown("""
-    ### ■ 1. Actual（実績値：treated）
-    - 出稿エリアの実測 KPI  
-    - “実際にはこう動いた” の基準ライン。
+    <h3>アウトプット説明</h3>
 
-    ### ■ 2. Counterfactual（予測値：counterfactual_pred）
-    - 「もし出稿していなかったら」の推定値  
-    - コントロール指標（非出稿エリア）を使って構築  
-    - 介入後は **予測値 ≠ 実績値** となり、差分が「広告の効果」。
+    <h4>■ 1. Actual（実績値：treated）</h4>
+    <ul>
+        <li>出稿エリアの実測 KPI</li>
+    </ul>
 
-    ### ■ 3. Point Effect（瞬間効果）
-    - 各日（or 各行）における  
-    **実績 − カウンターファクト** の差分  
-    - 一日ごと・時間ごとにどれだけリフトしたかを可視化。
+    <h4>■ 2. Counterfactual（反実仮想の予測値）</h4>
+    <ul>
+        <li>「もし出稿していなかったら」の推定値</li>
+        <li>介入後は実績と乖離 → この差が効果</li>
+    </ul>
 
-    ### ■ 4. Cumulative Effect（累積効果）
-    - 介入開始以降の効果の累積合計  
-    - “広告を出した結果、合計でどれだけ上積みされたか？”  
-    - 最も意思決定で使われる出力。
+    <h4>■ 3. Point Effect（瞬間効果）</h4>
+    <ul>
+        <li>各日（または各行）における  
+            <b>実績 − カウンターファクト</b> の差分</li>
+    </ul>
 
-    ### ■ 5. Summary（サマリー）
-    CausalImpact が自動で生成するテキストレポートで、  
-    次の内容がまとめられる：
+    <h4>■ 4. Cumulative Effect（累積効果）</h4>
+    <ul>
+        <li>介入開始以降のリフトの累積</li>
+        <li>「広告によって合計どれだけ押し上げられたか」</li>
+    </ul>
 
-    - **平均効果**（post期間の平均 point_effect）  
-    - **合計効果**（累積効果 = cumulative effect）  
-    - **相対効果 (%)**  
-    - **効果が統計的に有意かどうか**  
-    - ベイズモデルに基づく **95%予測区間** など
+    <h4>■ 5. Summary（サマリー）</h4>
+    <ul>
+        <li>平均効果（AV effect）</li>
+        <li>合計効果（cumulative effect）</li>
+        <li>相対効果 (%)</li>
+        <li>統計的有意性（p-value）</li>
+        <li>95% 予測区間（ベイズCI）</li>
+    </ul>
 
-    ### ■ 6. Report（自然言語レポート）
-    - 効果が有意か、期間全体での寄与、推定方法  
-    - 広告効果検証のレポートにそのまま貼れる文章  
+    <h4>■ 6. Report（自然言語レポート）</h4>
+    <ul>
+        <li>そのままレポートに貼れる解釈文を自動生成</li>
+    </ul>
 
-    ### ■ 7. Actual vs Counterfactual グラフ
-    横軸：日付  
-    - 青：実績  
-    - オレンジ：出稿しない世界線での予測  
-    - 点線：介入開始日  
-    この差が **広告によるリフト（因果効果）** を意味する。
+    <h4>■ 7. Actual vs Counterfactual グラフ</h4>
+    <ul>
+        <li>青：実績</li>
+        <li>オレンジ：反実仮想の推定曲線</li>
+        <li>点線：介入日</li>
+        <li>差分 = 因果効果（リフト）を可視化</li>
+    </ul>
 
-    ### ■ 8. ダウンロード用 CSV
-    以下の列を含む：
-    - actual_treated（実績）
-    - counterfactual_pred（反実仮想予測）
-    - point_effect（瞬間効果）
-    - cumulative_effect（累積効果）
-    """)
-
+    <h4>■ 8. ダウンロード用 CSV</h4>
+    <ul>
+        <li>actual_treated（実績）</li>
+        <li>counterfactual_pred（反実仮想）</li>
+        <li>point_effect（瞬間効果）</li>
+        <li>cumulative_effect（累積効果）</li>
+    </ul>
+    """
+    )
 
     if not _CAUSALIMPACT_OK:
         st.error("causalimpact が未インストールです。先に環境へインストールしてください。")
@@ -2449,36 +2547,38 @@ def tab_CausalImpact():
     st.pyplot(fig)
 
 def tab_factor():
-    st.write("因子分析（Factor Analysis）")
+    show_card(
+    """
+    <h2>因子分析（Factor Analysis）</h2>
 
-    # === 説明セクション ===
-    st.subheader("目的")
-    st.markdown("""
-    - 多数の質問項目やイメージ項目から**潜在因子（価値観・心理構造）を抽出**し、  
-      データの背後にある構造を理解する。
-    """)
+    <h3>目的</h3>
+    <ul>
+        <li>多数の質問項目やイメージ項目から <b>潜在因子（価値観・心理構造）</b> を抽出し、データの背後にある構造を理解する。</li>
+    </ul>
 
-    st.subheader("使用ケース")
-    st.markdown("""
-    - ブランドイメージ調査やNPS調査の**心理構造**を把握したい。  
-    - 多数の項目を少数の要因にまとめて**解釈しやすくしたい**。  
-    - セグメンテーション前に、価値観や態度を**因子スコアに圧縮**したい。
-    """)
+    <h3>使用ケース</h3>
+    <ul>
+        <li>ブランドイメージ調査や NPS 調査の <b>心理構造</b> を把握したい。</li>
+        <li>多数の項目を少数の因子へまとめ、<b>解釈しやすくしたい</b>。</li>
+        <li>セグメンテーション前に、価値観・態度項目を <b>因子スコアに圧縮</b> したい。</li>
+    </ul>
 
-    st.subheader("inputデータ")
-    st.markdown("""
-    - **数値列のみが対象**  
-    - 1列目以降に「評価項目・イメージ項目」などを並べた形式  
-    - CSV / Excel (A_入力シート対応)
-    """)
+    <h3>inputデータ</h3>
+    <ul>
+        <li><b>数値列のみが対象</b></li>
+        <li>1列目以降に「評価項目・イメージ項目」などを並べた形式</li>
+        <li>CSV / Excel（A_入力シートがあれば優先）</li>
+    </ul>
 
-    st.subheader("アウトプット説明")
-    st.markdown("""
-    - **因子負荷量**：どの項目がどの因子に強く乗るか（解釈の中心）  
-    - **因子スコア**：各サンプルの因子の位置  
-    - **固有値・寄与率**（必要に応じて追加可能）  
-    - **因子数は任意選択（1〜10）**
-    """)
+    <h3>アウトプット説明</h3>
+    <ul>
+        <li><b>因子負荷量</b>：どの項目がどの因子に強く関わるか（解釈の中心）</li>
+        <li><b>因子スコア</b>：各サンプルの因子空間での位置</li>
+        <li><b>固有値・寄与率</b>（必要に応じて追加可能）</li>
+        <li><b>因子数は任意選択（1〜10）</b></li>
+    </ul>
+    """
+    )
 
     # === ファイル読み込み ===
     up = st.file_uploader("CSV / XLSX をアップロード", type=["csv","xlsx"])
@@ -2528,36 +2628,39 @@ def tab_factor():
     st.download_button("因子スコアCSV", score_df.to_csv().encode("utf-8"), "factor_scores.csv")
 
 def tab_ca():
-    st.write("コレスポンデンス分析（Correspondence Analysis）")
+    show_card(
+    """
+    <h2>コレスポンデンス分析（Correspondence Analysis）</h2>
 
-    # === 説明セクション ===
-    st.subheader("目的")
-    st.markdown("""
-    - **カテゴリ×カテゴリの対応関係**を、2次元マップとして可視化し、  
-      どの属性がどのカテゴリに近いかを把握する。
-    """)
+    <h3>目的</h3>
+    <ul>
+        <li><b>カテゴリ × カテゴリの対応関係</b> を2次元マップとして可視化し、  
+            どの属性がどのカテゴリに近いかを把握する。</li>
+    </ul>
 
-    st.subheader("使用ケース")
-    st.markdown("""
-    - ブランド × イメージワード の**ポジショニングマップ**  
-    - 属性 × 購入理由、店舗 × 利用理由 などの関係整理  
-    - クロス集計表を**視覚的に理解**したい
-    """)
+    <h3>使用ケース</h3>
+    <ul>
+        <li>ブランド × イメージワード の <b>ポジショニングマップ</b></li>
+        <li>属性 × 購入理由、店舗 × 利用理由 などの関係整理</li>
+        <li>クロス集計表を <b>視覚的に理解</b> したい場合</li>
+    </ul>
 
-    st.subheader("inputデータ")
-    st.markdown("""
-    - 行：ブランド / 属性  
-    - 列：イメージワード / 購買理由  
-    - **クロス集計表**の形式（CSV / Excel）
-    - 1列目は index（ブランド名など）
-    """)
+    <h3>inputデータ</h3>
+    <ul>
+        <li><b>行：</b>ブランド / 属性</li>
+        <li><b>列：</b>イメージワード / 購買理由</li>
+        <li><b>クロス集計形式</b>（CSV / Excel）</li>
+        <li>1列目は index（ブランド名など）</li>
+    </ul>
 
-    st.subheader("アウトプット説明")
-    st.markdown("""
-    - **行プロット座標**：ブランド・属性側の布置  
-    - **列プロット座標**：イメージワード・理由側の布置  
-    - **CAマップ（対応分析プロット）**：行列の距離を可視化
-    """)
+    <h3>アウトプット説明</h3>
+    <ul>
+        <li><b>行プロット座標</b>：ブランド・属性の布置</li>
+        <li><b>列プロット座標</b>：イメージワード・理由の布置</li>
+        <li><b>CAマップ（対応分析プロット）</b>：行列間の距離を視覚化</li>
+    </ul>
+    """
+    )
 
     # === ファイル読み込み ===
     up = st.file_uploader("クロス集計表（CSV / XLSX）", type=["csv","xlsx"])
@@ -2617,32 +2720,50 @@ def tab_ca():
 
 
 def tab_curve():
-    st.write("Cuerve数式予測")
-    st.subheader("目的")
-    text_11="""
-    - 目的変数（出稿量や予算）に対する説明変数（リーチや認知）の曲線を作成する。"""
-    st.markdown(text_11)
-    st.subheader("使用ケース")
-    text_12="""
-    - **出稿量（予算）とリーチの関係分析**: 広告出稿量の増加に対して、どの程度リーチが増加するかを予測。
-    - **出稿量（予算）と認知度の関係分析**: 広告出稿量が増加に対して、どの程度認知度が上昇するかを予測。"""
-    st.markdown(text_12)
-    st.subheader("inputデータ")
-    text_13="""
-    - 目的変数となる値とそれに伴う説明変数を入力。"""
-    if st.button("Click me to go to folder"):
-        st.write('[Go to folder](https://hakuhodody-my.sharepoint.com/:f:/r/personal/sd000905_hakuhodody-holdings_co_jp/Documents/%E7%B5%B1%E5%90%88AP%E5%B1%80_AaaS1-4%E9%83%A8_%E5%85%B1%E6%9C%89OneDrive/04.%20%E3%83%84%E3%83%BC%E3%83%AB%EF%BC%8F%E3%82%BD%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3/megupy/01.input?csf=1&web=1&e=waFpBB)')
-    st.markdown(text_13)
-    st.subheader("アウトプット説明")
-    st.markdown("- モデルの数式")
-    st.latex(r"""
-    y = \frac{K}{1 + \left(a \left(\frac{x}{10^{dx}}\right)^b\right)} \cdot 10^{dy}
-    """)
-    text_14="""
-    - 「dx」「dy」は桁数を揃えるための数値。
-    - 出力された、「a」「b」「K」「dx」「dy」を上記式に代入。
-    - Number of decisions（決定係数, R²）: モデルの適合度を示す。1に近い程モデルがデータにフィットしていることを意味する。"""
-    st.markdown(text_14)
+    show_card(
+    """
+    <h2>Curve数式予測</h2>
+
+    <h3>目的</h3>
+    <ul>
+        <li>目的変数（出稿量や予算）に対する説明変数（リーチや認知）の <b>反応曲線（Curve）</b> を推定し、関係式として表現する。</li>
+    </ul>
+
+    <h3>使用ケース</h3>
+    <ul>
+        <li><b>出稿量（予算）とリーチの関係分析</b>：広告出稿量を増やしたとき、リーチがどの程度増えるかを数式で予測。</li>
+        <li><b>出稿量（予算）と認知度の関係分析</b>：広告出稿量が増えた際、認知がどれだけ上昇するかを予測。</li>
+    </ul>
+
+    <h3>inputデータ</h3>
+    <ul>
+        <li>目的変数と、それに対応する説明変数を入力。</li>
+    </ul>
+
+    <p>
+    <a href="https://hakuhodody-my.sharepoint.com/:f:/r/personal/sd000905_hakuhodody-holdings_co_jp/Documents/%E7%B5%B1%E5%90%88AP%E5%B1%80_AaaS1-4%E9%83%A8_%E5%85%B1%E6%9C%89OneDrive/04.%20%E3%83%84%E3%83%BC%E3%83%AB%EF%BC%8F%E3%82%BD%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3/megupy/01.input?csf=1&web=1&e=waFpBB" target="_blank">
+    🔗 入力フォルダを開く
+    </a>
+    </p>
+
+    <h3>アウトプット説明</h3>
+    <ul>
+        <li><b>モデルの数式</b></li>
+    </ul>
+
+    <p>
+    \\[
+    y = \\frac{K}{1 + \\left(a \\left(\\frac{x}{10^{dx}}\\right)^b\\right)} \\cdot 10^{dy}
+    \\]
+    </p>
+
+    <ul>
+        <li>「dx」「dy」は桁数調整用のパラメータ。</li>
+        <li>出力された <b>a, b, K, dx, dy</b> を上記数式に代入することでモデルが完成。</li>
+        <li><b>R²（決定係数）</b>：1に近いほどモデル精度が高い。</li>
+    </ul>
+    """
+    )
 
 
 
