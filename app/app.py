@@ -1177,7 +1177,6 @@ def tab_SEM():
         <li><b>パス係数（regression paths）</b>：変数間の因果的影響の強さ</li>
         <li><b>因子負荷量（loadings）</b>：観測変数が潜在因子をどれだけ反映しているか</li>
         <li><b>標準化係数（std_est）</b>：単位の異なる指標を比較しやすい</li>
-
         <li><b>適合度指標（Fit indices）</b>
             <ul>
                 <li><b>CFI / TLI</b>（0.90以上が目安）</li>
@@ -1190,7 +1189,7 @@ def tab_SEM():
         <li><b>CSVダウンロード可能</b>（係数表・適合度・標準化解）</li>
     </ul>
     """)
-    
+
     if not _SEM_OK:
         st.error("semopy を読み込めませんでした。")
         if _SEM_ERR:
