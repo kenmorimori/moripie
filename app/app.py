@@ -813,7 +813,6 @@ def tab_MultipleRegression():
         <li><b>選択された最適モデル（使用された説明変数）</b></li>
         <li><b>係数（元スケールに戻して出力）</b></li>
         <li>標準化あり/なしを選択可能</li>
-
         <li><b>モデル評価指標</b></li>
         <ul>
             <li>CV-R²</li>
@@ -821,13 +820,11 @@ def tab_MultipleRegression():
             <li>AIC / BIC</li>
             <li>調整R²</li>
         </ul>
-
         <li><b>寄与分解（Contribution Table）</b></li>
         <ul>
             <li>変数ごとの寄与量（impact）</li>
             <li>平均寄与シェア（どの変数が重要か）</li>
         </ul>
-
         <li><b>CSVダウンロード</b></li>
         <ul>
             <li>係数表</li>
@@ -836,7 +833,6 @@ def tab_MultipleRegression():
     </ul>
     """
     )
-
 
     up = st.file_uploader("CSV / XLSX をアップロード", type=["csv", "xlsx"], key="regsel_file")
     if up is None:
