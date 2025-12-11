@@ -384,7 +384,8 @@ def tab_PCA():
 
 def tab_Logistic():
 
-    show_card("""
+    show_card(
+    """
     <h2>Logistic回帰</h2>
 
     <h3>目的</h3>
@@ -415,7 +416,8 @@ def tab_Logistic():
         <li><b>P>|z|</b>：P値。有意水準0.05を下回ればその説明変数は有意な偏回帰係数であることが言える。</li>
         <li>inputデータの目的変数と説明変数の入力位置に注意。</li>
     </ul>
-    """)
+    """
+    )
 
     uploaded_file = st.file_uploader("ファイルをアップロードしてください", type=["csv", "xlsx"])
 
