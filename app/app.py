@@ -46,26 +46,37 @@ st.markdown("""
 
     /* カード全体のデザイン */
     .card {
-        background-color: #ffffff;
+        background-color: #ffffff;       /* 白 */
         padding: 2rem;
         margin-top: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);  /* カードに影をつける */
+        border-radius: 12px;             /* 角丸 */
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* 影 */
+        line-height: 1.6;
     }
 
-    /* カード内タイトル */
+    /* カード内タイトル（h2） */
     .card h2 {
         margin-top: 0;
-        color: #2e7d32;
+        font-weight: 600;
+        color: #2e7d32;     /* MORIPIEグリーン */
     }
 
-    /* カード内の見出し */
+    /* セクション見出し（h3） */
     .card h3 {
-        color: #388e3c;
+        margin-top: 1.4rem;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #388e3c;     /* 少し明るいグリーン */
+    }
+
+    /* リスト調整 */
+    .card ul {
+        padding-left: 1.2rem;
     }
 
 </style>
 """, unsafe_allow_html=True)
+
 
 st.markdown("""
 <style>
@@ -82,6 +93,14 @@ html, body, div, span, input, textarea, button, p, h1, h2, h3, h4, h5, h6 {
 }
 </style>
 """, unsafe_allow_html=True)
+
+def show_card(content_html: str):
+    st.markdown(f"""
+    <div class="card">
+        {content_html}
+    </div>
+    """, unsafe_allow_html=True)
+
 
 
 try:
@@ -149,36 +168,41 @@ def login():
 
 
 def tab_PCA():
-    st.write("主成分分析（PCA）")
+    # ======= カードUI：説明ブロック =======
+    show_card("""
+        <h2>主成分分析（PCA）</h2>
 
-    # === セクション：説明 ===
-    st.subheader("目的")
-    st.markdown("""
-    - 多数の説明変数に潜む共通因子を抽出し、次元圧縮して全体構造を把握する。
+        <h3>目的</h3>
+        <ul>
+            <li>多数の説明変数に潜む共通因子を抽出し、次元圧縮して全体構造を把握する。</li>
+        </ul>
+
+        <h3>使用ケース</h3>
+        <ul>
+            <li><b>多変量の要約</b>：媒体接触や属性が多いときに、少数の指標（主成分）へ要約。</li>
+            <li><b>可視化</b>：2次元に圧縮してクラスタ傾向・外れ値を把握。</li>
+            <li><b>前処理</b>：回帰やクラスタリング前に多重共線性を緩和。</li>
+        </ul>
+
+        <h3>inputデータ</h3>
+        <ul>
+            <li>1列目：<b>目的変数（y）</b></li>
+            <li>2列目以降：<b>説明変数（X）</b>（数値列）</li>
+            <li>※Excel/CSV対応。Excelは <b>A_入力</b> シートがあれば優先、無ければ先頭シートを読み込み。</li>
+        </ul>
+
+        <h3>アウトプット説明</h3>
+        <ul>
+            <li><b>固有値・寄与率・累積寄与率</b>：どの主成分がどれだけ分散を説明するか。</li>
+            <li><b>成分負荷量（loadings）</b>：各変数が主成分へどれだけ寄与するか。</li>
+            <li><b>スコア（scores）</b>：各サンプルの主成分空間上の座標。</li>
+            <li><b>スクリープロット</b> と <b>バイプロット（PC1×PC2）</b> を表示。</li>
+            <li><b>CSVダウンロード</b>：成分負荷量・スコアを保存可能。</li>
+        </ul>
     """)
 
-    st.subheader("使用ケース")
-    st.markdown("""
-    - **多変量の要約**：媒体接触や属性が多いときに、少数の指標（主成分）へ要約。  
-    - **可視化**：2次元に圧縮してクラスタ傾向・外れ値を把握。  
-    - **前処理**：回帰やクラスタリング前に多重共線性を緩和。
-    """)
+    # ======= 以下は元コードそのまま =======
 
-    st.subheader("inputデータ")
-    st.markdown("""
-    - 1列目：**目的変数（y）**  
-    - 2列目以降：**説明変数（X）**（数値列）  
-    ※Excel/CSV対応。Excelは **A_入力** シートがあれば優先、無ければ先頭シートを読み込みます。
-    """)
-
-    st.subheader("アウトプット説明")
-    st.markdown("""
-    - **固有値・寄与率・累積寄与率**：各主成分がどれだけ分散を説明するか。  
-    - **成分負荷量（loadings）**：各変数が主成分にどれだけ寄与するか。  
-    - **スコア（scores）**：各サンプルの主成分上の座標。  
-    - **スクリープロット** と **バイプロット（PC1×PC2）** を表示。  
-    - **CSVダウンロード**：成分負荷量・スコアを保存可能。
-    """)
 
     # === ファイル入力 ===
     up = st.file_uploader("PCA用ファイル（CSV / XLSX）をアップロードしてください", type=["csv", "xlsx"], key="pca_file")
