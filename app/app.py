@@ -41,9 +41,7 @@ import textwrap
 import matplotlib.pyplot as plt
 import io
 import base64
-from matplotlib import mathtext
-from io import BytesIO
-import base64
+
 
 
 logo = Image.open("app/moripie_logo1.png")
