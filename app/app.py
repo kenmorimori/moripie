@@ -141,9 +141,9 @@ st.markdown("""
 st.markdown("""
 <style>
 
-/* メインコンテンツ全体のデフォルト文字色を白に */
+/* メインコンテンツ全体のデフォルト文字色をグリーンに */
 [data-testid="stAppViewContainer"] * {
-    color: #ffffff !important;
+    color: #2e7d32 !important;
 }
 
 /* ただし、カード内の文字色は上書きしない */
