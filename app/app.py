@@ -38,6 +38,9 @@ from statsmodels.miscmodels.ordinal_model import OrderedModel
 import numpy as np
 from PIL import Image
 import textwrap
+import matplotlib.pyplot as plt
+import io
+import base64
 from matplotlib import mathtext
 from io import BytesIO
 import base64
@@ -157,11 +160,20 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-def latex_to_svg_base64(latex_str):
-    parser = mathtext.MathTextParser("Svg")
-    svg = parser.parse(latex_str).to_str()
+def latex_to_png_base64(latex_str):
+    fig = plt.figure(figsize=(0.01, 0.01))
+    fig.patch.set_facecolor("none")
+    plt.axis("off")
 
-    return base64.b64encode(svg.encode("utf-8")).decode("utf-8")
+    # LaTeX を描画
+    plt.text(0.5, 0.5, f"${latex_str}$", fontsize=22, ha="center", va="center")
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", dpi=300, transparent=True, bbox_inches="tight", pad_inches=0.1)
+    plt.close(fig)
+    buf.seek(0)
+
+    return base64.b64encode(buf.read()).decode("utf-8")
 
 try:
     from causalimpact import CausalImpact
@@ -2719,8 +2731,8 @@ def tab_ca():
 
 
 def tab_curve():
-    latex_svg = latex_to_svg_base64(
-        r"y = \frac{K}{1 + \left(a \left(\frac{x}{10^{dx}}\right)^b\right)} \cdot 10^{dy}"
+    latex_png = latex_to_png_base64(
+    r"y = \frac{K}{1 + \left(a \left(\frac{x}{10^{dx}}\right)^b\right)} \cdot 10^{dy}"
     )
     show_card(
     """
@@ -2747,7 +2759,7 @@ def tab_curve():
     <h3>アウトプット説明</h3>
     <p><b>モデルの数式</b></p>
     <div style="text-align:center;">
-        <img src="data:image/svg+xml;base64,{latex_svg}" style="width:80%; max-width:600px;"/>
+    <img src="data:image/png;base64,{latex_png}" style="width:80%; max-width:600px;"/>
     </div>
 
     <ul>
