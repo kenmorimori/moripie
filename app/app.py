@@ -2314,45 +2314,52 @@ def tab_CausalImpact():
     <h3>目的</h3>
     <ul>
         <li>広告出稿がKPIに与えた <b>因果的影響</b> を定量化する。</li>
-        <li>出稿が無かった場合（カウンターファクト）のKPI推移を推定し、  
-            実績との差分＝<b>リフト効果</b> を把握する。</li>
+        <li>出稿が無かった場合（カウンターファクト）のKPI推移を推定し、実績との差分＝<b>リフト効果</b> を把握する。</li>
     </ul>
+
     <h3>使用ケース</h3>
     <ul>
         <li><b>TVCM / キャンペーン効果検証</b>（出稿エリア vs 非出稿エリア）</li>
         <li><b>介入日以降が1になるフラグ</b> を用いた因果推定</li>
     </ul>
+
     <h3>inputデータ</h3>
     <ul>
-        <li>必須列（ヘッダー名は任意）</li>
-        <ul>
-            <li><b>日付列</b>（例: date / Date / 日付）</li>
-            <li><b>出稿フラグ</b>（0=未出稿 / 1=出稿開始以降）</li>
-            <li><b>出稿エリアKPI（treated）</b></li>
-            <li><b>非出稿エリアKPI（control）</b></li>
-        </ul>
+        <li>必須列（ヘッダー名は任意）
+            <ul>
+                <li><b>日付列</b>（例: date / Date / 日付）</li>
+                <li><b>出稿フラグ</b>（0=未出稿 / 1=出稿開始以降）</li>
+                <li><b>出稿エリアKPI（treated）</b></li>
+                <li><b>非出稿エリアKPI（control）</b></li>
+            </ul>
+        </li>
         <li>例：<code>date, flag, kpi_treated, kpi_control</code></li>
     </ul>
+
     <h3>アウトプット説明</h3>
+
     <h4>■ 1. Actual（実績値：treated）</h4>
     <ul>
         <li>出稿エリアの実測 KPI</li>
     </ul>
+
     <h4>■ 2. Counterfactual（反実仮想の予測値）</h4>
     <ul>
         <li>「もし出稿していなかったら」の推定値</li>
         <li>介入後は実績と乖離 → この差が効果</li>
     </ul>
+
     <h4>■ 3. Point Effect（瞬間効果）</h4>
     <ul>
-        <li>各日（または各行）における  
-            <b>実績 − カウンターファクト</b> の差分</li>
+        <li><b>実績 − カウンターファクト</b> の日次差分</li>
     </ul>
+
     <h4>■ 4. Cumulative Effect（累積効果）</h4>
     <ul>
-        <li>介入開始以降のリフトの累積</li>
+        <li>介入開始以降のリフト累積</li>
         <li>「広告によって合計どれだけ押し上げられたか」</li>
     </ul>
+
     <h4>■ 5. Summary（サマリー）</h4>
     <ul>
         <li>平均効果（AV effect）</li>
@@ -2361,10 +2368,12 @@ def tab_CausalImpact():
         <li>統計的有意性（p-value）</li>
         <li>95% 予測区間（ベイズCI）</li>
     </ul>
+
     <h4>■ 6. Report（自然言語レポート）</h4>
     <ul>
         <li>そのままレポートに貼れる解釈文を自動生成</li>
     </ul>
+
     <h4>■ 7. Actual vs Counterfactual グラフ</h4>
     <ul>
         <li>青：実績</li>
@@ -2372,6 +2381,7 @@ def tab_CausalImpact():
         <li>点線：介入日</li>
         <li>差分 = 因果効果（リフト）を可視化</li>
     </ul>
+
     <h4>■ 8. ダウンロード用 CSV</h4>
     <ul>
         <li>actual_treated（実績）</li>
@@ -2381,6 +2391,7 @@ def tab_CausalImpact():
     </ul>
     """
     )
+
 
     if not _CAUSALIMPACT_OK:
         st.error("causalimpact が未インストールです。先に環境へインストールしてください。")
