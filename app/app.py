@@ -37,6 +37,8 @@ from sklearn.model_selection import KFold
 from statsmodels.miscmodels.ordinal_model import OrderedModel
 import numpy as np
 from PIL import Image
+import textwrap
+
 
 logo = Image.open("app/moripie_logo1.png")
 st.sidebar.image(logo, use_column_width=True)
@@ -95,11 +97,13 @@ html, body, div, span, input, textarea, button, p, h1, h2, h3, h4, h5, h6 {
 """, unsafe_allow_html=True)
 
 def show_card(content_html: str):
+    html = textwrap.dedent(content_html)
     st.markdown(f"""
     <div class="card">
-        {content_html}
+        {html}
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
@@ -170,36 +174,37 @@ def login():
 def tab_PCA():
     # ======= カードUI：説明ブロック =======
     show_card("""
-        <h2>主成分分析（PCA）</h2>
+    <h2>主成分分析（PCA）</h2>
 
-        <h3>目的</h3>
-        <ul>
-            <li>多数の説明変数に潜む共通因子を抽出し、次元圧縮して全体構造を把握する。</li>
-        </ul>
+    <h3>目的</h3>
+    <ul>
+        <li>多数の説明変数に潜む共通因子を抽出し、次元圧縮して全体構造を把握する。</li>
+    </ul>
 
-        <h3>使用ケース</h3>
-        <ul>
-            <li><b>多変量の要約</b>：媒体接触や属性が多いときに、少数の指標（主成分）へ要約。</li>
-            <li><b>可視化</b>：2次元に圧縮してクラスタ傾向・外れ値を把握。</li>
-            <li><b>前処理</b>：回帰やクラスタリング前に多重共線性を緩和。</li>
-        </ul>
+    <h3>使用ケース</h3>
+    <ul>
+        <li><b>多変量の要約</b>：媒体接触や属性が多いときに、少数の指標（主成分）へ要約。</li>
+        <li><b>可視化</b>：2次元に圧縮してクラスタ傾向・外れ値を把握。</li>
+        <li><b>前処理</b>：回帰やクラスタリング前に多重共線性を緩和。</li>
+    </ul>
 
-        <h3>inputデータ</h3>
-        <ul>
-            <li>1列目：<b>目的変数（y）</b></li>
-            <li>2列目以降：<b>説明変数（X）</b>（数値列）</li>
-            <li>※Excel/CSV対応。Excelは <b>A_入力</b> シートがあれば優先、無ければ先頭シートを読み込み。</li>
-        </ul>
+    <h3>inputデータ</h3>
+    <ul>
+        <li>1列目：<b>目的変数（y）</b></li>
+        <li>2列目以降：<b>説明変数（X）</b>（数値列）</li>
+        <li>※Excel/CSV対応。Excelは <b>A_入力</b> シートがあれば優先、無ければ先頭シートを読み込み。</li>
+    </ul>
 
-        <h3>アウトプット説明</h3>
-        <ul>
-            <li><b>固有値・寄与率・累積寄与率</b>：どの主成分がどれだけ分散を説明するか。</li>
-            <li><b>成分負荷量（loadings）</b>：各変数が主成分へどれだけ寄与するか。</li>
-            <li><b>スコア（scores）</b>：各サンプルの主成分空間上の座標。</li>
-            <li><b>スクリープロット</b> と <b>バイプロット（PC1×PC2）</b> を表示。</li>
-            <li><b>CSVダウンロード</b>：成分負荷量・スコアを保存可能。</li>
-        </ul>
+    <h3>アウトプット説明</h3>
+    <ul>
+        <li><b>固有値・寄与率・累積寄与率</b>：どの主成分がどれだけ分散を説明するか。</li>
+        <li><b>成分負荷量（loadings）</b>：各変数が主成分へどれだけ寄与するか。</li>
+        <li><b>スコア（scores）</b>：各サンプルの主成分空間上の座標。</li>
+        <li><b>スクリープロット</b> と <b>バイプロット（PC1×PC2）</b> を表示。</li>
+        <li><b>CSVダウンロード</b>：成分負荷量・スコアを保存可能。</li>
+    </ul>
     """)
+
 
     # ======= 以下は元コードそのまま =======
 
