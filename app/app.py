@@ -203,7 +203,8 @@ def tab_PCA():
         <li><b>スクリープロット</b> と <b>バイプロット（PC1×PC2）</b> を表示。</li>
         <li><b>CSVダウンロード</b>：成分負荷量・スコアを保存可能。</li>
     </ul>
-""")
+"""
+    )
 
     # === ファイル入力 ===
     up = st.file_uploader("PCA用ファイル（CSV / XLSX）をアップロードしてください", type=["csv", "xlsx"], key="pca_file")
