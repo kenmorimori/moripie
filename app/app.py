@@ -102,7 +102,8 @@ def show_card(content_html: str):
     <div class="card">
         {html}
     </div>
-    """, unsafe_allow_html=True)
+    """
+    , unsafe_allow_html=True)
 
 
 
@@ -173,7 +174,8 @@ def login():
 
 def tab_PCA():
     # ======= カードUI：説明ブロック =======
-    show_card("""
+    show_card(
+    """
     <h2>主成分分析（PCA）</h2>
 
     <h3>目的</h3>
@@ -203,7 +205,7 @@ def tab_PCA():
         <li><b>スクリープロット</b> と <b>バイプロット（PC1×PC2）</b> を表示。</li>
         <li><b>CSVダウンロード</b>：成分負荷量・スコアを保存可能。</li>
     </ul>
-"""
+    """
     )
 
     # === ファイル入力 ===
