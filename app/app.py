@@ -383,32 +383,39 @@ def tab_PCA():
 
 
 def tab_Logistic():
-    st.write("Logistic回帰")
 
-    st.subheader("目的")
-    text_31="""
-    - ある特定の事象が起きる確率を分析し、結果を予測する。"""
-    st.markdown(text_31)
-    st.subheader("使用ケース")
-    text_32="""
-    - 調査結果の個票データ解析: 説明変数として各メディアの接触有無（0,1データ）、目的変数として認知などのKPI有無（0,1データ）を使用して、各メディアの接触がKPIに与える影響を定量化する。GoogleトレンドやDS.INSIGHTなどからKWボリュームの過去傾向を分析し、季節性や長期トレンドを確認。
-    - CV起点でのCP評価: IDベースに、CPごとにFQしたかどうかを説明変数として（0,1データ）、ある指定期間内にCVしたかどうかを目的変数としたときに（0,1データ）、過去蓄積効果があったのか確認する。"""
-    st.markdown(text_32)
-    st.subheader("inputデータ")
-    text_33="""
-    - 目的変数となる値とそれに伴う説明変数を入力。"""
-    if st.button("Click me to go to folder"):
-        st.write('[Go to folder](https://hakuhodody-my.sharepoint.com/:f:/r/personal/sd000905_hakuhodody-holdings_co_jp/Documents/%E7%B5%B1%E5%90%88AP%E5%B1%80_AaaS1-4%E9%83%A8_%E5%85%B1%E6%9C%89OneDrive/04.%20%E3%83%84%E3%83%BC%E3%83%AB%EF%BC%8F%E3%82%BD%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3/megupy/01.input?csf=1&web=1&e=waFpBB)')
-    st.markdown(text_33)
-    st.subheader("アウトプット説明")
-    text_34="""
-    - **★importance**: 説明変数（各メディア接触有無）が目的変数（KPI）に与える貢献度をはかるための指標。
-    - **odds**: オッズ比。importanceと大小関係は基本同じ。1より大きいならKPIに対して＋に働く1よりい低いなら－に働く。
-    - P>|z|：P値。有意水準0.05を下回ればその説明変数は有意な偏回帰係数であることが言える。"""
-    st.markdown(text_34)
-    text_35="""
-    - inputデータの目的変数と説明変数の入力位置に注意。"""
-    st.markdown(text_35)
+    show_card("""
+    <h2>Logistic回帰</h2>
+
+    <h3>目的</h3>
+    <ul>
+        <li>ある特定の事象が起きる確率を分析し、結果を予測する。</li>
+    </ul>
+
+    <h3>使用ケース</h3>
+    <ul>
+        <li>調査結果の個票データ解析: 説明変数として各メディアの接触有無（0,1データ）、目的変数として認知などのKPI有無（0,1データ）を使用して、各メディアの接触がKPIに与える影響を定量化する。GoogleトレンドやDS.INSIGHTなどからKWボリュームの過去傾向を分析し、季節性や長期トレンドを確認。</li>
+        <li>CV起点でのCP評価: IDベースに、CPごとにFQしたかどうかを説明変数として（0,1データ）、ある指定期間内にCVしたかどうかを目的変数としたときに（0,1データ）、過去蓄積効果があったのか確認する。</li>
+    </ul>
+
+    <h3>inputデータ</h3>
+    <ul>
+        <li>目的変数となる値とそれに伴う説明変数を入力。</li>
+        <li>
+            <a href="https://hakuhodody-my.sharepoint.com/:f:/r/personal/sd000905_hakuhodody-holdings_co_jp/Documents/%E7%B5%B1%E5%90%88AP%E5%B1%80_AaaS1-4%E9%83%A8_%E5%85%B1%E6%9C%89OneDrive/04.%20%E3%83%84%E3%83%BC%E3%83%AB%EF%BC%8F%E3%82%BD%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3/megupy/01.input?csf=1&web=1&e=waFpBB" target="_blank" style="color: #fff; text-decoration: underline;">
+            ▶ inputフォルダへ移動
+            </a>
+        </li>
+    </ul>
+
+    <h3>アウトプット説明</h3>
+    <ul>
+        <li><b>★importance</b>: 説明変数（各メディア接触有無）が目的変数（KPI）に与える貢献度をはかるための指標。</li>
+        <li><b>odds</b>: オッズ比。importanceと大小関係は基本同じ。1より大きいならKPIに対して＋に働く、1より低いなら－に働く。</li>
+        <li><b>P>|z|</b>：P値。有意水準0.05を下回ればその説明変数は有意な偏回帰係数であることが言える。</li>
+        <li>inputデータの目的変数と説明変数の入力位置に注意。</li>
+    </ul>
+    """)
 
     uploaded_file = st.file_uploader("ファイルをアップロードしてください", type=["csv", "xlsx"])
 
