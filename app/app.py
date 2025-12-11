@@ -106,7 +106,14 @@ st.markdown("""
 .card h4, .card h4 * {
     color: #ffffff !important;
 }
-                        
+.card code {
+    background-color: #ffffff22 !important;  /* 半透明の白背景（カードに馴染む） */
+    color: #000000 !important;               /* 黒文字で可読性UP */
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+                                 
 </style>
 """, unsafe_allow_html=True)
 
