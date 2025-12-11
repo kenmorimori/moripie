@@ -38,6 +38,9 @@ from statsmodels.miscmodels.ordinal_model import OrderedModel
 import numpy as np
 from PIL import Image
 import textwrap
+from matplotlib import mathtext
+from io import BytesIO
+import base64
 
 
 logo = Image.open("app/moripie_logo1.png")
@@ -154,6 +157,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def latex_to_svg_base64(latex_str):
+    parser = mathtext.MathTextParser("Svg")
+    svg = parser.parse(latex_str).to_str()
+
+    return base64.b64encode(svg.encode("utf-8")).decode("utf-8")
 
 try:
     from causalimpact import CausalImpact
@@ -2734,18 +2742,15 @@ def tab_curve():
     </a>
     </p>
     <h3>アウトプット説明</h3>
+    <p><b>モデルの数式</b></p>
+    <div style="text-align:center;">
+        <img src="data:image/svg+xml;base64,{latex_svg}" style="width:80%; max-width:600px;"/>
+    </div>
+
     <ul>
-        <li><b>モデルの数式</b></li>
-    </ul>
-    <p>
-    \\[
-    y = \\frac{K}{1 + \\left(a \\left(\\frac{x}{10^{dx}}\\right)^b\\right)} \\cdot 10^{dy}
-    \\]
-    </p>
-    <ul>
-        <li>「dx」「dy」は桁数調整用のパラメータ。</li>
-        <li>出力された <b>a, b, K, dx, dy</b> を上記数式に代入することでモデルが完成。</li>
-        <li><b>R²（決定係数）</b>：1に近いほどモデル精度が高い。</li>
+        <li>「dx」「dy」は桁調整用のパラメータ</li>
+        <li>a, b, K, dx, dy を上記式に代入してモデル完成</li>
+        <li><b>R²（決定係数）</b>：1に近いほどモデル精度が高い</li>
     </ul>
     """
     )
