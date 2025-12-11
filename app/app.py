@@ -50,94 +50,99 @@ st.sidebar.image(logo, use_column_width=True)
 st.markdown("""
 <style>
 
- /* =====================================
+/* =====================================
       カード全体のデザイン（背景＝緑、文字＝白）
- ===================================== */
+===================================== */
 .card {
     background-color: #2e7d32;       /* MORIPIEグリーン */
     padding: 2rem;
     margin-top: 1.5rem;
-    border-radius: 12px;             /* 角丸 */
+    border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     line-height: 1.6;
-    color: #ffffff !important;       /* 文字色を白に固定 */
+    color: #ffffff !important;
 
+    /* 🔥 カードをほぼ全幅に広げる */
+    width: 100%;
+    max-width: 1800px; /* 1500〜2000が黄金比 */
+    margin-left: auto;
+    margin-right: auto;
 }
 
+/* カード内すべての文字を白 */
 .card, .card * {
     color: #ffffff !important;
-}  
+}
 
-/* =====================================
-      カード内タイトル（h2）
- ===================================== */
+/* h2 タイトル */
 .card h2 {
     margin-top: 0;
     font-weight: 600;
-    color: #ffffff !important;       /* 白文字 */
+    color: #ffffff !important;
 }
 
-/* =====================================
-      セクション見出し（h3）
- ===================================== */
+/* h3 見出し */
 .card h3 {
     margin-top: 1.4rem;
     margin-bottom: 0.5rem;
     font-weight: 500;
-    color: #e8f5e9 !important;       /* 少し明るい白（柔らかい）*/
+    color: #e8f5e9 !important;
 }
 
-/* =====================================
-      リスト（ul, li）
- ===================================== */
+/* リスト */
 .card ul {
     padding-left: 1.4rem;
 }
-
 .card li {
     margin-bottom: 0.4rem;
-    color: #ffffff !important;       /* 白文字 */
+    color: #ffffff !important;
 }
 
-/* 太字（b） */
+/* 太字 */
 .card b {
     color: #ffffff !important;
 }
 
+/* h4 も白に */
 .card h4, .card h4 * {
     color: #ffffff !important;
 }
+
+/* code（例: コードブロック） */
 .card code {
-    background-color: #ffffff22 !important;  /* 半透明の白背景（カードに馴染む） */
-    color: #000000 !important;               /* 黒文字で可読性UP */
+    background-color: #ffffff22 !important;
+    color: #000000 !important;
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.9rem;
 }
+
+/* テーブル */
 .card table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 1rem;
-    background-color: rgba(255,255,255,0.1); /* 透明感のある白背景 */
+    background-color: rgba(255,255,255,0.1);
 }
-
 .card th, .card td {
     border: 1px solid rgba(255,255,255,0.3);
     padding: 0.5rem 0.8rem;
-    color: #ffffff !important;     /* 白文字 */
+    color: #ffffff !important;
 }
-
 .card th {
     font-weight: bold;
     background-color: rgba(255,255,255,0.2);
 }
+
+/* 🔥 ページ自体の最大幅（重要） */
 main .block-container {
-    max-width: 2000px;   /* ← ここを広げればモニター対応できる。1500〜1800推奨 */
+    max-width: 2000px;
     padding-left: 2rem;
     padding-right: 2rem;
 }
-                                   
+
 </style>
+
 """, unsafe_allow_html=True)
 
 
