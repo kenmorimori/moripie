@@ -103,6 +103,10 @@ st.markdown("""
     color: #ffffff !important;
 }
 
+.card h4, .card h4 * {
+    color: #ffffff !important;
+}
+                        
 </style>
 """, unsafe_allow_html=True)
 
