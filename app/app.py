@@ -132,6 +132,11 @@ st.markdown("""
     font-weight: bold;
     background-color: rgba(255,255,255,0.2);
 }
+main .block-container {
+    max-width: 1600px;   /* ← ここを広げればモニター対応できる。1500〜1800推奨 */
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
                                    
 </style>
 """, unsafe_allow_html=True)
