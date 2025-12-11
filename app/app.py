@@ -2730,8 +2730,9 @@ def tab_ca():
 
 def tab_curve():
     latex_png = latex_to_png_base64(
-    r"y = \frac{K}{1 + \left(a \left(\frac{x}{10^{dx}}\right)^b\right)} \cdot 10^{dy}"
+    r"y = \frac{K}{1 + a\left(\frac{x}{10^{d_x}}\right)^b}\,10^{d_y}"
     )
+
     show_card(
     """
     <h2>Curve数式予測</h2>
