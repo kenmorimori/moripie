@@ -1328,7 +1328,6 @@ def tab_MMM():
         より現実的な反応曲線を推定し、媒体別の <b>真の効果量（貢献度 / ROI）</b> を明らかにする。</li>
         <li>過去の投資実績から、<b>最適な投下配分</b> や <b>追加投資の限界効果（限界効用）</b> を可視化する。</li>
     </ul>
-
     <h3>使用ケース</h3>
     <ul>
         <li>複数媒体の投資額とKPIを使い、<b>媒体別ROI</b> を求めたい</li>
@@ -1337,7 +1336,6 @@ def tab_MMM():
         <li>広告効果の <b>遅効性（翌週・翌月に効く）</b> をモデルに入れたい</li>
         <li><b>予算シミュレーション</b>（今後の投資配分の参考）にも使いたい</li>
     </ul>
-
     <h3>inputデータ</h3>
     <ul>
         <li><b>1列目：date（日付 / 週次 / 月次）</b></li>
@@ -1345,18 +1343,15 @@ def tab_MMM():
         <li><b>3列目以降：媒体費用（tv_spend / web_spend / sns_spend …）</b></li>
         <li>例：</li>
     </ul>
-
     <table>
     <tr><th>date</th><th>y</th><th>tv_spend</th><th>web_spend</th><th>sns_spend</th></tr>
     <tr><td>2024-01-01</td><td>1200</td><td>300</td><td>200</td><td>150</td></tr>
     </table>
-
     <ul>
         <li>CSV / Excel に対応</li>
         <li>欠損値は自動除外 or 平均補完</li>
         <li>数値列以外は自動除外</li>
     </ul>
-
     <h3>アウトプット説明</h3>
     <ul>
         <li><b>推定モデル（反応曲線）</b></li>
@@ -1364,31 +1359,25 @@ def tab_MMM():
             <li>アドストック処理：広告の蓄積効果を再現</li>
             <li>Hill式：費用増加に伴う飽和（伸びにくさ）を再現</li>
         </ul>
-
         <li><b>媒体別の係数（影響度）</b>：変換後特徴量の係数</li>
-
         <li><b>寄与分解（Contribution）</b></li>
         <ul>
             <li>各媒体が y に与えた寄与額</li>
             <li>平均寄与シェア（最も貢献した媒体は？）</li>
         </ul>
-
         <li><b>反応曲線（Response Curve）</b></li>
         <ul>
             <li>投入額に応じて KPI がどう変化するか</li>
         </ul>
-
         <li><b>限界効用（dROI）</b></li>
         <ul>
             <li>追加投資1単位あたりの増加効果</li>
             <li>最適投資の検討に必須</li>
         </ul>
-
         <li><b>予算シミュレーション</b></li>
         <ul>
             <li>総予算を ±○% 変えた場合の KPI 変化を自動計算</li>
         </ul>
-
         <li><b>CSV ダウンロード</b></li>
         <ul>
             <li>寄与分解表</li>
@@ -2310,13 +2299,11 @@ def tab_CausalImpact():
         <li>出稿が無かった場合（カウンターファクト）のKPI推移を推定し、  
             実績との差分＝<b>リフト効果</b> を把握する。</li>
     </ul>
-
     <h3>使用ケース</h3>
     <ul>
         <li><b>TVCM / キャンペーン効果検証</b>（出稿エリア vs 非出稿エリア）</li>
         <li><b>介入日以降が1になるフラグ</b> を用いた因果推定</li>
     </ul>
-
     <h3>inputデータ</h3>
     <ul>
         <li>必須列（ヘッダー名は任意）</li>
@@ -2328,32 +2315,26 @@ def tab_CausalImpact():
         </ul>
         <li>例：<code>date, flag, kpi_treated, kpi_control</code></li>
     </ul>
-
     <h3>アウトプット説明</h3>
-
     <h4>■ 1. Actual（実績値：treated）</h4>
     <ul>
         <li>出稿エリアの実測 KPI</li>
     </ul>
-
     <h4>■ 2. Counterfactual（反実仮想の予測値）</h4>
     <ul>
         <li>「もし出稿していなかったら」の推定値</li>
         <li>介入後は実績と乖離 → この差が効果</li>
     </ul>
-
     <h4>■ 3. Point Effect（瞬間効果）</h4>
     <ul>
         <li>各日（または各行）における  
             <b>実績 − カウンターファクト</b> の差分</li>
     </ul>
-
     <h4>■ 4. Cumulative Effect（累積効果）</h4>
     <ul>
         <li>介入開始以降のリフトの累積</li>
         <li>「広告によって合計どれだけ押し上げられたか」</li>
     </ul>
-
     <h4>■ 5. Summary（サマリー）</h4>
     <ul>
         <li>平均効果（AV effect）</li>
@@ -2362,12 +2343,10 @@ def tab_CausalImpact():
         <li>統計的有意性（p-value）</li>
         <li>95% 予測区間（ベイズCI）</li>
     </ul>
-
     <h4>■ 6. Report（自然言語レポート）</h4>
     <ul>
         <li>そのままレポートに貼れる解釈文を自動生成</li>
     </ul>
-
     <h4>■ 7. Actual vs Counterfactual グラフ</h4>
     <ul>
         <li>青：実績</li>
@@ -2375,7 +2354,6 @@ def tab_CausalImpact():
         <li>点線：介入日</li>
         <li>差分 = 因果効果（リフト）を可視化</li>
     </ul>
-
     <h4>■ 8. ダウンロード用 CSV</h4>
     <ul>
         <li>actual_treated（実績）</li>
@@ -2741,35 +2719,29 @@ def tab_curve():
     <ul>
         <li>目的変数（出稿量や予算）に対する説明変数（リーチや認知）の <b>反応曲線（Curve）</b> を推定し、関係式として表現する。</li>
     </ul>
-
     <h3>使用ケース</h3>
     <ul>
         <li><b>出稿量（予算）とリーチの関係分析</b>：広告出稿量を増やしたとき、リーチがどの程度増えるかを数式で予測。</li>
         <li><b>出稿量（予算）と認知度の関係分析</b>：広告出稿量が増えた際、認知がどれだけ上昇するかを予測。</li>
     </ul>
-
     <h3>inputデータ</h3>
     <ul>
         <li>目的変数と、それに対応する説明変数を入力。</li>
     </ul>
-
     <p>
     <a href="https://hakuhodody-my.sharepoint.com/:f:/r/personal/sd000905_hakuhodody-holdings_co_jp/Documents/%E7%B5%B1%E5%90%88AP%E5%B1%80_AaaS1-4%E9%83%A8_%E5%85%B1%E6%9C%89OneDrive/04.%20%E3%83%84%E3%83%BC%E3%83%AB%EF%BC%8F%E3%82%BD%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3/megupy/01.input?csf=1&web=1&e=waFpBB" target="_blank">
     🔗 入力フォルダを開く
     </a>
     </p>
-
     <h3>アウトプット説明</h3>
     <ul>
         <li><b>モデルの数式</b></li>
     </ul>
-
     <p>
     \\[
     y = \\frac{K}{1 + \\left(a \\left(\\frac{x}{10^{dx}}\\right)^b\\right)} \\cdot 10^{dy}
     \\]
     </p>
-
     <ul>
         <li>「dx」「dy」は桁数調整用のパラメータ。</li>
         <li>出力された <b>a, b, K, dx, dy</b> を上記数式に代入することでモデルが完成。</li>
@@ -2777,9 +2749,6 @@ def tab_curve():
     </ul>
     """
     )
-
-
-
 
     uploaded_file = st.file_uploader("Curve数式予測用inputファイルをアップロードしてください", type=["csv", "xlsx"])
 
