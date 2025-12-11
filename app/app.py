@@ -138,6 +138,22 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+
+/* メインコンテンツ全体のデフォルト文字色を白に */
+[data-testid="stAppViewContainer"] * {
+    color: #ffffff !important;
+}
+
+/* ただし、カード内の文字色は上書きしない */
+.card * {
+    color: inherit !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 
 try:
     from causalimpact import CausalImpact
@@ -1646,7 +1662,8 @@ def tab_MMM():
 
 
 def tab_STL():
-    sshow_card("""
+    show_card(
+    """
     <h2>STL分解</h2>
 
     <h3>目的</h3>
