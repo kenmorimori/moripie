@@ -61,8 +61,7 @@ st.markdown("""
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     line-height: 1.6;
     color: #ffffff !important;       /* 文字色を白に固定 */
-    width: 100%;                    
-    max-width: 100%;
+
 }
 
 .card, .card * {
