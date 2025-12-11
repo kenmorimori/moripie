@@ -98,12 +98,10 @@ html, body, div, span, input, textarea, button, p, h1, h2, h3, h4, h5, h6 {
 
 def show_card(content_html: str):
     html = textwrap.dedent(content_html)
-    st.markdown(f"""
-    <div class="card">
-        {html}
-    </div>
-    """
-    , unsafe_allow_html=True)
+    st.markdown(
+        f"""<div class="card">{html}</div>""",
+        unsafe_allow_html=True
+    )
 
 
 
