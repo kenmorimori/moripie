@@ -1145,7 +1145,8 @@ def tab_SEM():
     import numpy as np
     from io import BytesIO
 
-    show_card("""
+    show_card(
+    """
     <h2>共分散構造分析（SEM）</h2>
 
     <h3>目的</h3>
@@ -1175,8 +1176,8 @@ def tab_SEM():
     <ul>
         <li><b>パス係数（regression paths）</b>：変数間の因果的影響の強さ</li>
         <li><b>因子負荷量（loadings）</b>：観測変数が潜在因子をどれだけ反映しているか</li>
+        
         <li><b>標準化係数（std_est）</b>：単位の異なる指標を比較しやすい</li>
-
         <li><b>適合度指標（Fit indices）</b></li>
         <ul>
             <li><b>CFI / TLI</b>（0.90以上が目安）</li>
