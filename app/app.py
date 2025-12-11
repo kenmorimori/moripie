@@ -113,7 +113,24 @@ st.markdown("""
     border-radius: 4px;
     font-size: 0.9rem;
 }
-                                 
+.card table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background-color: rgba(255,255,255,0.1); /* 透明感のある白背景 */
+}
+
+.card th, .card td {
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 0.5rem 0.8rem;
+    color: #ffffff !important;     /* 白文字 */
+}
+
+.card th {
+    font-weight: bold;
+    background-color: rgba(255,255,255,0.2);
+}
+                                   
 </style>
 """, unsafe_allow_html=True)
 
