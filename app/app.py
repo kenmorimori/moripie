@@ -69,16 +69,19 @@ st.markdown("""
 
 st.markdown("""
 <style>
-/* Google Fonts 読み込み */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
 
-html, body, [class*="css"] {
+/* 全体のフォントに適用 */
+html, body, div, span, input, textarea, button, p, h1, h2, h3, h4, h5, h6 {
+    font-family: 'Noto Sans JP', sans-serif !important;
+}
+
+/* Streamlit 内部クラスも上書き */
+[class^="css"], [class*="css"] {
     font-family: 'Noto Sans JP', sans-serif !important;
 }
 </style>
 """, unsafe_allow_html=True)
-
-
 
 
 try:
