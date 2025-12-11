@@ -2730,44 +2730,24 @@ def tab_ca():
 
 def tab_curve():
     latex_png = latex_to_png_base64(
-    r"y = \frac{K}{1 + a\left(\frac{x}{10^{d_x}}\right)^b}\,10^{d_y}"
+        r"y = \frac{K}{1 + a\left(\frac{x}{10^{d_x}}\right)^b}\,10^{d_y}"
     )
 
-    show_card(
-    """
+    show_card(f"""
     <h2>Curve数式予測</h2>
 
-    <h3>目的</h3>
-    <ul>
-        <li>目的変数（出稿量や予算）に対する説明変数（リーチや認知）の <b>反応曲線（Curve）</b> を推定し、関係式として表現する。</li>
-    </ul>
-    <h3>使用ケース</h3>
-    <ul>
-        <li><b>出稿量（予算）とリーチの関係分析</b>：広告出稿量を増やしたとき、リーチがどの程度増えるかを数式で予測。</li>
-        <li><b>出稿量（予算）と認知度の関係分析</b>：広告出稿量が増えた際、認知がどれだけ上昇するかを予測。</li>
-    </ul>
-    <h3>inputデータ</h3>
-    <ul>
-        <li>目的変数と、それに対応する説明変数を入力。</li>
-    </ul>
-    <p>
-    <a href="https://hakuhodody-my.sharepoint.com/:f:/r/personal/sd000905_hakuhodody-holdings_co_jp/Documents/%E7%B5%B1%E5%90%88AP%E5%B1%80_AaaS1-4%E9%83%A8_%E5%85%B1%E6%9C%89OneDrive/04.%20%E3%83%84%E3%83%BC%E3%83%AB%EF%BC%8F%E3%82%BD%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3/megupy/01.input?csf=1&web=1&e=waFpBB" target="_blank">
-    🔗 入力フォルダを開く
-    </a>
-    </p>
-    <h3>アウトプット説明</h3>
-    <p><b>モデルの数式</b></p>
+    <h3>モデルの数式</h3>
     <div style="text-align:center;">
-    <img src="data:image/png;base64,{latex_png}" style="width:80%; max-width:600px;"/>
+        <img src="data:image/png;base64,{latex_png}" style="width:80%; max-width:600px;">
     </div>
 
     <ul>
-        <li>「dx」「dy」は桁調整用のパラメータ</li>
-        <li>a, b, K, dx, dy を上記式に代入してモデル完成</li>
+        <li>「d_x」「d_y」は桁調整用のパラメータ</li>
+        <li>a, b, K, d_x, d_y を上記式に代入してモデル完成</li>
         <li><b>R²（決定係数）</b>：1に近いほどモデル精度が高い</li>
     </ul>
-    """
-    )
+    """)
+
 
     uploaded_file = st.file_uploader("Curve数式予測用inputファイルをアップロードしてください", type=["csv", "xlsx"])
 
