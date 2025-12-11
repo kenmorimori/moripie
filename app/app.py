@@ -136,7 +136,7 @@ st.markdown("""
 
 /* 🔥 ページ自体の最大幅（重要） */
 main .block-container {
-    max-width: 2000px;
+    max-width: 2500px;
     padding-left: 2rem;
     padding-right: 2rem;
 }
