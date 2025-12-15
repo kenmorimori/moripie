@@ -44,6 +44,7 @@ import base64
 from semopy import Model
 
 
+
 logo = Image.open("app/LOGO.png")
 st.sidebar.image(logo, use_column_width=True)
 
@@ -1504,9 +1505,14 @@ def tab_SEM():
 
         # 係数（推定値・SE・z・p）
         try:
-            est = inspect(model)  # path, loadings, intercept などまとめ
+            # もっとも互換性が高い
+            est = inspect(model)  
         except Exception:
-            est = model.parameters_dataframe
+            # 古い semopy 用
+            try:
+                est = model.parameters_dataframe()
+            except Exception:
+                est = model.inspect()
 
         st.subheader("推定結果（係数）")
         st.dataframe(est)
@@ -2897,19 +2903,25 @@ def tab_factor():
         min(10, X.shape[1]),
         2
     )
-    model = Model(model_description)
-
-    # フィッティング
+    # === 因子分析 ===
+    from sklearn.decomposition import FactorAnalysis
+    model = Model(model_description)   # モデル構造（例：回帰式の文字列）
     res = model.fit(df)
 
-    # semopy の推定結果（互換性のある取得方法）
-    try:
-        est = model.parameters_dataframe()
-    except:
-        est = model.inspect()  # 古いバージョンはこちら
+    est = model.parameters_dataframe()
 
-    st.subheader("推定パラメータ")
-    st.dataframe(est)
+    loadings = pd.DataFrame(
+        model.components_.T,
+        index=X.columns,
+        columns=[f"Factor{i+1}" for i in range(n_factor)]
+    )
+
+    st.subheader("因子負荷量（Factor Loadings）")
+    st.dataframe(loadings.style.format("{:.3f}"))
+
+    score_df = pd.DataFrame(F, columns=[f"Factor{i+1}" for i in range(n_factor)])
+    st.subheader("因子スコア（Factor Scores）")
+    st.dataframe(score_df.head())
 
     # ダウンロード
     st.download_button("因子負荷量CSV", loadings.to_csv().encode("utf-8"), "factor_loadings.csv")
