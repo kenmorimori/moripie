@@ -456,13 +456,13 @@ def tab_PCA():
     )
     
      # ここで Python 側でダウンロードボタンを表示
-    with open("app/主成分＆因子分析.xlsx", "rb") as f:
+    with open("app/主成分OR因子分析.xlsx", "rb") as f:
         logistic_file = f.read()
 
     st.download_button(
         label="📥 入力シートをダウンロード",
         data=logistic_file,
-        file_name="主成分＆因子分析.xlsx",
+        file_name="主成分OR因子分析.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
@@ -2848,13 +2848,13 @@ def tab_factor():
     """
     )
     # ここで Python 側でダウンロードボタンを表示
-    with open("app/主成分＆因子分析.xlsx", "rb") as f:
+    with open("app/主成分OR因子分析.xlsx", "rb") as f:
         logistic_file = f.read()
 
     st.download_button(
         label="📥 入力シートをダウンロード",
         data=logistic_file,
-        file_name="主成分&因子分析.xlsx",
+        file_name="主成分OR因子分析.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
