@@ -2881,41 +2881,42 @@ def tab_factor():
     st.write("データプレビュー：")
     st.dataframe(df.head())
 
-    # === 2列目以降を分析対象とする（1列目はID） ===
+    # === 1列目をID、2列目以降を説明変数として使用 ===
+    ID = df.iloc[:, 0]              # 使わないが保持しておく
     X_raw = df.iloc[:, 1:].copy()
 
-    # 数値列のみ抽出
+    # 数値列のみ使用
     X = X_raw.select_dtypes(include=[np.number])
-
-    # 非数値列の警告
-    dropped = [c for c in X_raw.columns if c not in X.columns]
-    if dropped:
-        st.warning(f"数値でない列を除外しました: {', '.join(map(str, dropped))}")
+    drop_cols = [c for c in X_raw.columns if c not in X.columns]
+    if drop_cols:
+        st.warning(f"非数値列を除外しました: {', '.join(drop_cols)}")
 
     if X.shape[1] == 0:
-        st.error("分析可能な数値列がありません")
+        st.error("因子分析には数値列が必要です。")
         return
 
-    # 因子数の指定
-    n_factor = st.slider(
-        "抽出する因子数",
-        1,
-        min(10, X.shape[1]),
-        2
-    )
-    # === 因子分析 ===
+    # 欠損値の処理
+    na_opt = st.radio("欠損値の扱い", ["行ごとに削除（推奨）", "列平均で補完"], index=0, horizontal=True)
+    if na_opt == "行ごとに削除（推奨）":
+        X = X.dropna()
+    else:
+        X = X.fillna(X.mean())
+
+    # === 因子数 ===
+    n_factor = st.slider("抽出する因子数", 1, min(10, X.shape[1]), 2)
+
+    # === 因子分析実行 ===
     from sklearn.decomposition import FactorAnalysis
-    model = Model(model_description)   # モデル構造（例：回帰式の文字列）
-    res = model.fit(df)
 
-    est = model.parameters_dataframe()
-
+    fa = FactorAnalysis(n_components=n_factor)
+    F = fa.fit_transform(X)   # 因子スコア
     loadings = pd.DataFrame(
-        model.components_.T,
+        fa.components_.T,
         index=X.columns,
         columns=[f"Factor{i+1}" for i in range(n_factor)]
     )
 
+    # === 結果の表示 ===
     st.subheader("因子負荷量（Factor Loadings）")
     st.dataframe(loadings.style.format("{:.3f}"))
 
@@ -2924,8 +2925,15 @@ def tab_factor():
     st.dataframe(score_df.head())
 
     # ダウンロード
-    st.download_button("因子負荷量CSV", loadings.to_csv().encode("utf-8"), "factor_loadings.csv")
-    st.download_button("因子スコアCSV", score_df.to_csv().encode("utf-8"), "factor_scores.csv")
+    st.download_button("因子負荷量をCSVでダウンロード",
+                    data=loadings.to_csv().encode("utf-8-sig"),
+                    file_name="factor_loadings.csv",
+                    mime="text/csv")
+
+    st.download_button("因子スコアをCSVでダウンロード",
+                    data=score_df.to_csv().encode("utf-8-sig"),
+                    file_name="factor_scores.csv",
+                    mime="text/csv")
 
 def tab_ca():
     show_card(
