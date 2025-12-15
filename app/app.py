@@ -223,22 +223,21 @@ st.markdown("""
 <style>
 
 /* =========================================================
-   ① 黒背景エリア → 白文字
-   （ただし “白背景コンポーネント” は後で黒文字で上書きする）
+   ① 黒背景エリア → 白文字（基本ルール）
    ========================================================= */
 .stApp * {
     color: #ffffff !important;
 }
 
 /* =========================================================
-   ② カード内（緑背景）はカードの白文字をそのまま優先
+   ② カード内（緑背景）はカード独自の色を優先
    ========================================================= */
 .card, .card * {
     color: inherit !important;
 }
 
 /* =========================================================
-   ③ 白背景 UI コンポーネントは黒文字に戻す
+   ③ 白背景 UI コンポーネント（Uploader / 入力欄 / ボタン）は黒文字
    ========================================================= */
 
 /* FileUploader */
@@ -249,9 +248,11 @@ st.markdown("""
     color: #000000 !important;
 }
 
-/* TextInput / TextArea */
-input, input *, textarea, textarea * {
+/* TextInput / TextArea（標準入力欄） */
+input, input *,
+textarea, textarea * {
     color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important; /* Safari対策 */
 }
 
 /* ボタン（白背景タイプ） */
@@ -259,14 +260,45 @@ button, button * {
     color: #000000 !important;
 }
 
-/* Browse files 専用（念のため） */
+/* Browse files 専用 */
 button[data-testid="baseButton-secondary"],
 button[data-testid="baseButton-secondary"] * {
     color: #000000 !important;
 }
 
 /* =========================================================
-   ④ ヘッダー（右上のログアウトなど）は黒文字
+   ④ TextArea（st.text_area）の白文字化を完全防止
+   ========================================================= */
+
+/* TextArea のコンテナ全体 */
+.stTextArea, .stTextArea * {
+    color: #000000 !important;
+}
+
+/* wrapper div も黒文字 */
+.stTextArea > div,
+.stTextArea > div * {
+    color: #000000 !important;
+}
+
+/* placeholder */
+.stTextArea textarea::placeholder {
+    color: #666 !important;
+}
+
+/* =========================================================
+   ⑤ Markdown / code / pre の調整
+   ========================================================= */
+pre, pre * {
+    color: #000000 !important;
+}
+
+code, code * {
+    color: #000000 !important;
+}
+
+/* =========================================================
+   ⑥ ヘッダー（右上のログアウトなど）は黒文字
    ========================================================= */
 header[data-testid="stHeader"] *,
 [data-testid="stToolbar"] * {
@@ -274,105 +306,57 @@ header[data-testid="stHeader"] *,
 }
 
 /* =========================================================
-   ⑤ h1 見出しは必ず白文字（ログイン画面含む）
+   ⑦ h1 見出しは必ず白文字（ログイン画面含む）
    ========================================================= */
 h1, h1 * {
     color: #ffffff !important;
 }
 
-/* Markdown 内の h1 にも適用 */
 [data-testid="stMarkdownContainer"] h1,
 [data-testid="stMarkdownContainer"] h1 * {
     color: #ffffff !important;
 }
 
-/* element-container（ログイン画面）内も強制 */
+/* ログイン画面の h1 / 入力欄 */
 .element-container h1, .element-container h1 * {
     color: #ffffff !important;
 }
+
 .element-container input,
 .element-container input *,
 .element-container textarea,
 .element-container textarea * {
-    color: #000000 !important;       /* 入力欄の文字を黒に */
-    -webkit-text-fill-color: #000000 !important;  /* Safari 対策 */
-}
-
-/* wrapper の div（ここが白文字になってしまう → 黒に戻す） */
-.stTextArea div,
-.stTextArea div * {
     color: #000000 !important;
-}
-
-/* プレースホルダー */
-.stTextArea textarea::placeholder {
-    color: #555 !important;
-}
-
-/* Markdown の pre（背景白のとき黒） */
-pre, pre * {
-    color: #000 !important;
-}
-
-/* code を白背景に合わせて黒文字 */
-code, code * {
-    color: #000 !important;
+    -webkit-text-fill-color: #000000 !important;
 }
 
 /* =========================================================
-   ⑦ Sidebar のテキストはすべて白
+   ⑧ Sidebar は白文字
    ========================================================= */
 [data-testid="stSidebar"],
 [data-testid="stSidebar"] * {
     color: #ffffff !important;
 }
 
-/* 一般的な Spinner アイコン */
+/* =========================================================
+   ⑨ Spinner（処理中アイコン）を緑で見やすく
+   ========================================================= */
 svg[role="img"],
-div[role="status"] svg {
-    color: #00ff88 !important;       /* 明るい緑で見えるように */
-    stroke: #00ff88 !important;
-}
-
-/* Streamlit v1.30〜 の status widget */
-[data-testid="stStatusWidget"] svg {
-    color: #00ff88 !important;
-    stroke: #00ff88 !important;
-}
-
-/* 通常の stSpinner（コンテンツ内）の場合 */
+div[role="status"] svg,
+[data-testid="stStatusWidget"] svg,
 .stSpinner > div > svg {
     color: #00ff88 !important;
     stroke: #00ff88 !important;
-}
-
-/* もし背景と重なっても見えるように少し太く */
-svg[role="img"],
-[data-testid="stStatusWidget"] svg {
     stroke-width: 2px !important;
 }
 
-/* スピナーの周囲の文字も白にする */
+/* Spinner 周囲の文字 */
 [data-testid="stStatusWidget"] * {
     color: #ffffff !important;
 }
-/* 入力文字 */
-textarea, textarea * {
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important;  /* Safari対策 */
-}
-
-/* TextArea コンテナ全体（div）も黒文字に */
-.stTextArea, .stTextArea * {
-    color: #000000 !important;
-}
-
-/* placeholder も見えるように */
-textarea::placeholder {
-    color: #666 !important;
-}
 
 </style>
+
 
 
 """, unsafe_allow_html=True)
