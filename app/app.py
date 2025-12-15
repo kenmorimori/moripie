@@ -263,7 +263,16 @@ button[data-testid="baseButton-secondary"] * {
 [data-testid="stFileUploaderDropzoneInstructions"] * {
     color: #000000 !important;
 }
-
+/* =====================================
+   🔧 Streamlit ヘッダー（右上ボタン類）を黒文字へ
+===================================== */
+[data-testid="stToolbar"], 
+[data-testid="stToolbar"] *,
+button[kind="header"], 
+button[kind="header"] * {
+    color: #000000 !important;
+}
+            
 /* =====================================
    ⑤ code だけ黒文字を維持
 ===================================== */
