@@ -298,16 +298,25 @@ h1, h1 * {
     -webkit-text-fill-color: #000000 !important;  /* Safari 対策 */
 }
 
-/* プレースホルダーも黒に */
-textarea::placeholder {
+/* wrapper の div（ここが白文字になってしまう → 黒に戻す） */
+.stTextArea div,
+.stTextArea div * {
+    color: #000000 !important;
+}
+
+/* プレースホルダー */
+.stTextArea textarea::placeholder {
     color: #555 !important;
 }
 
-/* =========================================================
-   ⑥ code は黒文字
-   ========================================================= */
+/* Markdown の pre（背景白のとき黒） */
+pre, pre * {
+    color: #000 !important;
+}
+
+/* code を白背景に合わせて黒文字 */
 code, code * {
-    color: #000000 !important;
+    color: #000 !important;
 }
 
 /* =========================================================
