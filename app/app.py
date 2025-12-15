@@ -225,7 +225,7 @@ st.markdown("""
 /* =========================================================
    0) 黒背景エリアの文字色を白に（ただし “例外” は除外する）
    ========================================================= */
-.stApp *:not(.card *):not([data-testid="stFileUploader"] *):not(button *):not(input *):not(code *):not([data-testid="stToolbar"] *) {
+.stApp *:not(.card *):not([data-testid="stFileUploader"] *):not(code *):not(input):not(input *):not(textarea):not(textarea *):not(button):not(button *) {
     color: #ffffff !important;
 }
 
