@@ -299,9 +299,8 @@ h1, h1 * {
 }
 
 /* プレースホルダーも黒に */
-.element-container input::placeholder,
-.element-container textarea::placeholder {
-    color: #444 !important;
+textarea::placeholder {
+    color: #555 !important;
 }
 
 /* =========================================================
