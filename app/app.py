@@ -220,42 +220,43 @@ div[data-testid="stToolbar"] * {
 st.markdown("""
 <style>
 
-/* メインコンテンツ全体のデフォルト文字色をグリーンに */
-[data-testid="stAppViewContainer"] * {
-    color: #2e7d32 !important;
-}
-
-/* ただし、カード内の文字色は上書きしない */
-.card * {
-    color: inherit !important;
-}
-
-/* ============================================
-   黒背景エリアの全体文字を白にする（カード以外）
-============================================ */
-body, html, .stApp {
-    color: #ffffff !important;
-}
-
-/* streamlit の main コンテンツ部分（カード外） */
-main, main *:not(code):not(.card):not(.card *):not(.st-emotion-cache-1fttcpj) {
-    color: #ffffff !important;
-}
-
-/* アップローダーのラベル（Browse files など）も白に */
-.st-emotion-cache-1vt0rj8 {
-    color: #ffffff !important;
-}
-.st-emotion-cache-1vt0rj8 * {
+/* ================================
+   黒背景部分の文字をぜんぶ白にする（カード以外）
+================================ */
+.stApp, .stApp * {
     color: #ffffff !important;
 }
 
 /* ================================
-   例外：白背景や code は黒文字のまま
+   ただしカード内は既存の白 or 指定色を優先
 ================================ */
-code {
+.card, .card * {
+    color: inherit !important;
+}
+
+/* ================================
+   左メニューの文字も白に
+================================ */
+[data-testid="stSidebar"], 
+[data-testid="stSidebar"] * {
+    color: #ffffff !important;
+}
+
+/* ================================
+   アップローダーの文字を白に
+================================ */
+[data-testid="stFileUploader"], 
+[data-testid="stFileUploader"] * {
+    color: #ffffff !important;
+}
+
+/* ================================
+   例外：code は黒文字のまま
+================================ */
+code, code * {
     color: #000000 !important;
 }
+
 
 
 </style>
