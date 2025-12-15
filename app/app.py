@@ -269,7 +269,46 @@ header[data-testid="stHeader"] *,
 code, code * {
     color: #000000 !important;
 }
+            
+/* Streamlit のタイトル（h1）を黒背景では白文字に固定 */
+div[data-testid="stApp"] h1,
+div[data-testid="stApp"] h1 * {
+    color: #ffffff !important;
+}
 
+/* ログイン画面など、幅が狭い場合の container 内の h1 も強制 */
+.element-container h1,
+.element-container h1 * {
+    color: #ffffff !important;
+}
+
+/* Markdown 経由のタイトルにも適用 */
+[data-testid="stMarkdownContainer"] h1,
+[data-testid="stMarkdownContainer"] h1 * {
+    color: #ffffff !important;
+}
+
+/* Sidebar ラジオボタン・チェックボックス・テキストを完全に白文字化 */
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] p {
+    color: #ffffff !important;
+}
+
+/* ラジオボタン内部のラベル */
+[data-testid="stSidebar"] .stRadio label,
+[data-testid="stSidebar"] .stRadio div,
+[data-testid="stSidebar"] .stRadio span {
+    color: #ffffff !important;
+}
+
+/* ホバー・選択状態のラベルも白 */
+[data-testid="stSidebar"] .stRadio label:hover,
+[data-testid="stSidebar"] .stRadio label:active {
+    color: #ffffff !important;
+}
+            
 </style>
 
 
