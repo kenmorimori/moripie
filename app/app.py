@@ -290,7 +290,34 @@ div[data-testid="InputInstructions"],
 div[data-testid="InputInstructions"] * {
     color: #000000 !important;
 }
-         
+/* ================================
+   🔘 白背景ボタン（LogOut など）を黒文字に
+================================ */
+
+/* st.button のボタン本体 */
+.stButton button,
+.stButton button * {
+    color: #000000 !important;
+}
+
+/* secondary ボタン（Browse files と同じ種類） */
+button[data-testid="baseButton-secondary"],
+button[data-testid="baseButton-secondary"] * {
+    color: #000000 !important;
+}
+
+/* primary ボタンが白背景の場合 */
+button[data-testid="baseButton-primary"],
+button[data-testid="baseButton-primary"] * {
+    color: #000000 !important;
+}
+
+/* Streamlit の emotion 自動生成クラスにも対応 */
+div[class*="st-emotion-cache"] button,
+div[class*="st-emotion-cache"] button * {
+    color: #000000 !important;
+}
+        
 /* =====================================
    ⑤ code だけ黒文字を維持
 ===================================== */
