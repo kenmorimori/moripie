@@ -220,72 +220,45 @@ div[data-testid="stToolbar"] * {
 st.markdown("""
 <style>
 
-/* ============================
-   ① 全体（黒背景部分のみ）→ 白文字
-   ============================ */
+/* ① 黒背景エリア = 白文字 */
 .stApp {
     background-color: #000000 !important;
 }
 
-.stApp > div:not(.card):not([data-testid="stSidebar"]) * {
+.stApp > div * {
     color: #ffffff !important;
 }
 
-/* =============================
-   ② カード内は本来の色を維持
-   ============================= */
+/* ② カード内は元の白文字（緑背景）を維持 */
 .card, .card * {
     color: inherit !important;
 }
 
-/* =============================
-   ③ サイドバー → 白文字
-   ============================= */
+/* ③ 白背景コンポーネントは黒文字（Uploader / Button / TextInput） */
+[data-testid="stFileUploader"],
+[data-testid="stFileUploader"] *,
+[data-testid="stFileUploaderDropzoneInstructions"],
+[data-testid="stFileUploaderDropzoneInstructions"] *,
+button,
+button *,
+input,
+input * {
+    color: #000000 !important;
+}
+
+/* ④ サイドバー */
 [data-testid="stSidebar"], 
 [data-testid="stSidebar"] * {
     color: #ffffff !important;
 }
 
-/* =============================
-   ④ アップローダー（白背景）→ 黒文字
-   ============================= */
-[data-testid="stFileUploader"] *,
-[data-testid="stFileUploaderDropzoneInstructions"],
-[data-testid="stFileUploaderDropzoneInstructions"] * {
-    color: #000000 !important;
-}
-
-/* Browse files ボタン（必ず黒文字） */
-button[data-testid="baseButton-secondary"],
-button[data-testid="baseButton-secondary"] * {
-    color: #000000 !important;
-}
-
-/* =============================
-   ⑤ ヘッダー（右上の Share, GitHub, Logout etc）→ 黒文字
-   ============================= */
-[data-testid="stToolbar"], 
-[data-testid="stToolbar"] *,
-header button, 
-header button * {
-    color: #000000 !important;
-}
-
-/* =============================
-   ⑥ 全ボタンを黒文字（ログアウト含む）
-   ============================= */
-button, button * {
-    color: #000000 !important;
-}
-
-/* =============================
-   ⑦ code だけ黒文字
-   ============================= */
+/* ⑤ code だけ黒文字 */
 code, code * {
     color: #000000 !important;
 }
 
 </style>
+
 
 """, unsafe_allow_html=True)
 
