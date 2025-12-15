@@ -230,6 +230,34 @@ st.markdown("""
     color: inherit !important;
 }
 
+/* ============================================
+   黒背景エリアの全体文字を白にする（カード以外）
+============================================ */
+body, html, .stApp {
+    color: #ffffff !important;
+}
+
+/* streamlit の main コンテンツ部分（カード外） */
+main, main *:not(code):not(.card):not(.card *):not(.st-emotion-cache-1fttcpj) {
+    color: #ffffff !important;
+}
+
+/* アップローダーのラベル（Browse files など）も白に */
+.st-emotion-cache-1vt0rj8 {
+    color: #ffffff !important;
+}
+.st-emotion-cache-1vt0rj8 * {
+    color: #ffffff !important;
+}
+
+/* ================================
+   例外：白背景や code は黒文字のまま
+================================ */
+code {
+    color: #000000 !important;
+}
+
+
 </style>
 """, unsafe_allow_html=True)
 
