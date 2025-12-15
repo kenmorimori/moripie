@@ -272,49 +272,8 @@ button[kind="header"],
 button[kind="header"] * {
     color: #000000 !important;
 }
-/* ================================
-   ✏ TextInput（ユーザー名/パスワードなど）を黒文字に戻す
-================================ */
-[data-testid="stTextInput"] input,
-[data-testid="stTextInput"] input::placeholder,
-[data-testid="stTextInput"] textarea,
-[data-testid="stTextInput"] textarea::placeholder,
-[data-testid="stTextInput"] label,
-[data-testid="stTextInput"] div,
-[data-testid="stTextInput"] * {
-    color: #000000 !important;
-}
-
-/* "Press Enter to apply" の補助テキスト */
-div[data-testid="InputInstructions"],
-div[data-testid="InputInstructions"] * {
-    color: #000000 !important;
-}
-/* ================================
-   🔘 白背景ボタン（LogOut など）を黒文字に
-================================ */
-
-/* st.button のボタン本体 */
-.stButton button,
-.stButton button * {
-    color: #000000 !important;
-}
-
-/* secondary ボタン（Browse files と同じ種類） */
-button[data-testid="baseButton-secondary"],
-button[data-testid="baseButton-secondary"] * {
-    color: #000000 !important;
-}
-
-/* primary ボタンが白背景の場合 */
-button[data-testid="baseButton-primary"],
-button[data-testid="baseButton-primary"] * {
-    color: #000000 !important;
-}
-
-/* Streamlit の emotion 自動生成クラスにも対応 */
-div[class*="st-emotion-cache"] button,
-div[class*="st-emotion-cache"] button * {
+/* Streamlit の全ボタンを黒文字に強制 */
+button, button * {
     color: #000000 !important;
 }
         
