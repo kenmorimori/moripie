@@ -305,6 +305,36 @@ code, code * {
     color: #ffffff !important;
 }
 
+/* 一般的な Spinner アイコン */
+svg[role="img"],
+div[role="status"] svg {
+    color: #00ff88 !important;       /* 明るい緑で見えるように */
+    stroke: #00ff88 !important;
+}
+
+/* Streamlit v1.30〜 の status widget */
+[data-testid="stStatusWidget"] svg {
+    color: #00ff88 !important;
+    stroke: #00ff88 !important;
+}
+
+/* 通常の stSpinner（コンテンツ内）の場合 */
+.stSpinner > div > svg {
+    color: #00ff88 !important;
+    stroke: #00ff88 !important;
+}
+
+/* もし背景と重なっても見えるように少し太く */
+svg[role="img"],
+[data-testid="stStatusWidget"] svg {
+    stroke-width: 2px !important;
+}
+
+/* スピナーの周囲の文字も白にする */
+[data-testid="stStatusWidget"] * {
+    color: #ffffff !important;
+}            
+
 </style>
 
 
