@@ -2618,6 +2618,17 @@ def tab_CausalImpact():
     """
     )
 
+                # ここで Python 側でダウンロードボタンを表示
+    with open("app/CausalImpact.xlsx", "rb") as f:
+        logistic_file = f.read()
+
+    st.download_button(
+        label="📥 入力シートをダウンロード",
+        data=logistic_file,
+        file_name="CausalImpact.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
 
     if not _CAUSALIMPACT_OK:
         st.error("causalimpact が未インストールです。先に環境へインストールしてください。")
