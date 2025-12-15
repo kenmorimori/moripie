@@ -220,6 +220,11 @@ div[data-testid="stToolbar"] * {
 st.markdown("""
 <style>
 
+/* メインコンテンツ全体のデフォルト文字色をグリーンに */
+[data-testid="stAppViewContainer"] * {
+    color: #2e7d32 !important;
+}
+            
 /* ================================
    黒背景部分の文字をぜんぶ白にする（カード以外）
 ================================ */
