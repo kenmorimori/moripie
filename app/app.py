@@ -630,12 +630,7 @@ def tab_Logistic():
 
     <h3>inputデータ</h3>
     <ul>
-        <li>目的変数となる値とそれに伴う説明変数を入力。</li>
-        <li>
-            <a href="app/Logistic.xlsx" target="_blank" style="color: #fff; text-decoration: underline;">
-            ▶ inputフォルダへ移動
-            </a>
-        </li>
+        <li>1列目：ID、2列目：目的変数、3列目以降：説明変数</li>
     </ul>
 
     <h3>アウトプット説明</h3>
@@ -647,6 +642,17 @@ def tab_Logistic():
     </ul>
     """
     )
+
+    # ここで Python 側でダウンロードボタンを表示
+with open("app/Logistic.xlsx", "rb") as f:
+    logistic_file = f.read()
+
+st.download_button(
+    label="📥 Logistic.xlsx をダウンロード",
+    data=logistic_file,
+    file_name="Logistic.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
 
     uploaded_file = st.file_uploader("ファイルをアップロードしてください", type=["csv", "xlsx"])
 
