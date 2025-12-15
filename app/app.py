@@ -439,7 +439,7 @@ def tab_PCA():
 
 <h3>inputデータ</h3>
 <ul>
-    <li>1列目：<b>目的変数（y）</b></li>
+    <li>1列目：<b>ID（y）</b></li>
     <li>2列目以降：<b>説明変数（X）</b>（数値列）</li>
     <li>※Excel/CSV対応。Excelは <b>A_入力</b> シートがあれば優先、無ければ先頭シートを読み込み。</li>
 </ul>
@@ -478,13 +478,13 @@ def tab_PCA():
         return
 
     if df.shape[1] < 2:
-        st.error("少なくとも2列（1列目=目的変数、2列目以降=説明変数）が必要です。")
+        st.error("少なくとも2列（1列目=ID、2列目以降=評価項目・イメージ項目）が必要です。")
         return
 
     st.write("データプレビュー：")
     st.dataframe(df.head())
 
-    # === y / X 分割（1列目=目的変数, 2列目以降=説明変数） ===
+    # === y / X 分割（1列目=ID, 2列目以降=説明変数） ===
     y = df.iloc[:, 0]
     X_raw = df.iloc[:, 1:].copy()
 
@@ -2823,7 +2823,7 @@ def tab_factor():
     <h3>inputデータ</h3>
     <ul>
         <li><b>数値列のみが対象</b></li>
-        <li>1列目以降に「評価項目・イメージ項目」などを並べた形式</li>
+        <li>1列目にID、2列目以降に「評価項目・イメージ項目」などを並べた形式</li>
         <li>CSV / Excel（A_入力シートがあれば優先）</li>
     </ul>
 
@@ -2854,14 +2854,28 @@ def tab_factor():
     st.write("データプレビュー：")
     st.dataframe(df.head())
 
-    # 数値列のみ使用
-    X = df.select_dtypes(include=[np.number])
+    # === 2列目以降を分析対象とする（1列目はID） ===
+    X_raw = df.iloc[:, 1:].copy()
+
+    # 数値列のみ抽出
+    X = X_raw.select_dtypes(include=[np.number])
+
+    # 非数値列の警告
+    dropped = [c for c in X_raw.columns if c not in X.columns]
+    if dropped:
+        st.warning(f"数値でない列を除外しました: {', '.join(map(str, dropped))}")
+
     if X.shape[1] == 0:
-        st.error("数値列がありません（因子分析は数値項目のみ対応）")
+        st.error("分析可能な数値列がありません")
         return
 
-    n_factor = st.slider("抽出する因子数", 1, min(10, X.shape[1]), 2)
-
+    # 因子数の指定
+    n_factor = st.slider(
+        "抽出する因子数",
+        1,
+        min(10, X.shape[1]),
+        2
+    )
     # === 因子分析 ===
     from sklearn.decomposition import FactorAnalysis
     model = FactorAnalysis(n_components=n_factor)
