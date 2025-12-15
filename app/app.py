@@ -644,15 +644,15 @@ def tab_Logistic():
     )
 
     # ここで Python 側でダウンロードボタンを表示
-with open("app/Logistic.xlsx", "rb") as f:
-    logistic_file = f.read()
+    with open("app/Logistic.xlsx", "rb") as f:
+        logistic_file = f.read()
 
-st.download_button(
-    label="📥 Logistic.xlsx をダウンロード",
-    data=logistic_file,
-    file_name="Logistic.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+    st.download_button(
+        label="📥 Logistic.xlsx をダウンロード",
+        data=logistic_file,
+        file_name="Logistic.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
     uploaded_file = st.file_uploader("ファイルをアップロードしてください", type=["csv", "xlsx"])
 
