@@ -1065,7 +1065,7 @@ def tab_MultipleRegression():
     """
     )
 
-        # ここで Python 側でダウンロードボタンを表示
+    # ここで Python 側でダウンロードボタンを表示
     with open("app/重回帰分析.xlsx", "rb") as f:
         logistic_file = f.read()
 
@@ -1427,6 +1427,16 @@ def tab_SEM():
     </ul>
     """)
 
+    # ここで Python 側でダウンロードボタンを表示
+    with open("app/SEM.xlsx", "rb") as f:
+        logistic_file = f.read()
+
+    st.download_button(
+        label="📥 入力シートをダウンロード",
+        data=logistic_file,
+        file_name="SEM.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
     if not _SEM_OK:
         st.error("semopy を読み込めませんでした。")
         if _SEM_ERR:
