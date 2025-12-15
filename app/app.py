@@ -2897,26 +2897,19 @@ def tab_factor():
         min(10, X.shape[1]),
         2
     )
-    # === 因子分析 ===
-    from sklearn.decomposition import FactorAnalysis
-    # --- 因子分析 ---
-    model = FactorAnalysis(n_components=n_factor)
-    F = model.fit_transform(X)
+    model = Model(model_description)
 
-    # 因子負荷量
-    loadings = pd.DataFrame(
-        model.components_.T,
-        index=X.columns,
-        columns=[f"Factor{i+1}" for i in range(n_factor)]
-    )
+    # フィッティング
+    res = model.fit(df)
 
-    st.subheader("因子負荷量（Factor Loadings）")
-    st.dataframe(loadings.style.format("{:.3f}"))
+    # semopy の推定結果（互換性のある取得方法）
+    try:
+        est = model.parameters_dataframe()
+    except:
+        est = model.inspect()  # 古いバージョンはこちら
 
-    # 因子スコア
-    score_df = pd.DataFrame(F, columns=[f"Factor{i+1}" for i in range(n_factor)])
-    st.subheader("因子スコア（Factor Scores）")
-    st.dataframe(score_df)
+    st.subheader("推定パラメータ")
+    st.dataframe(est)
 
     # ダウンロード
     st.download_button("因子負荷量CSV", loadings.to_csv().encode("utf-8"), "factor_loadings.csv")
