@@ -354,6 +354,39 @@ div[role="status"] svg,
 [data-testid="stStatusWidget"] * {
     color: #ffffff !important;
 }
+/* TextArea 全コンテナを黒文字に */
+div[data-testid="stTextArea"],
+div[data-testid="stTextArea"] * {
+    color: #000000 !important;
+}
+
+/* textarea 本体の文字色 */
+div[data-testid="stTextArea"] textarea {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important; /* Safari */
+}
+
+/* placeholder */
+div[data-testid="stTextArea"] textarea::placeholder {
+    color: #666 !important;
+}
+
+/* Streamlit v1.32〜 の TextArea ラッパー対応（新仕様）*/
+.st-key-text_area textarea {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+.st-key-text_area *, 
+.st-key-text_area div {
+    color: #000000 !important;
+}
+
+/* 背景が薄いグレーの layer に上書きされる場合があるため更に強制 */
+textarea:not([color]) {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
 
 </style>
 
