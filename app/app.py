@@ -2969,6 +2969,16 @@ def tab_ca():
     </ul>
     """
     )
+        # ここで Python 側でダウンロードボタンを表示
+    with open("app/コレスポンデンス分析.xlsx", "rb") as f:
+        logistic_file = f.read()
+
+    st.download_button(
+        label="📥 入力シートをダウンロード",
+        data=logistic_file,
+        file_name="コレスポンデンス分析.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
     # === ファイル読み込み ===
     up = st.file_uploader("クロス集計表（CSV / XLSX）", type=["csv","xlsx"])
