@@ -1050,6 +1050,17 @@ def tab_MultipleRegression():
     """
     )
 
+        # ここで Python 側でダウンロードボタンを表示
+    with open("app/重回帰分析.xlsx", "rb") as f:
+        logistic_file = f.read()
+
+    st.download_button(
+        label="📥 入力シートをダウンロード",
+        data=logistic_file,
+        file_name="重回帰分析.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
     up = st.file_uploader("CSV / XLSX をアップロード", type=["csv", "xlsx"], key="regsel_file")
     if up is None:
         return
