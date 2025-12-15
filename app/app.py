@@ -632,7 +632,7 @@ def tab_Logistic():
     <ul>
         <li>目的変数となる値とそれに伴う説明変数を入力。</li>
         <li>
-            <a href="https://hakuhodody-my.sharepoint.com/:f:/r/personal/sd000905_hakuhodody-holdings_co_jp/Documents/%E7%B5%B1%E5%90%88AP%E5%B1%80_AaaS1-4%E9%83%A8_%E5%85%B1%E6%9C%89OneDrive/04.%20%E3%83%84%E3%83%BC%E3%83%AB%EF%BC%8F%E3%82%BD%E3%83%AA%E3%83%A5%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3/megupy/01.input?csf=1&web=1&e=waFpBB" target="_blank" style="color: #fff; text-decoration: underline;">
+            <a href="app/Logistic.xlsx" target="_blank" style="color: #fff; text-decoration: underline;">
             ▶ inputフォルダへ移動
             </a>
         </li>
