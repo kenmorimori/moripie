@@ -648,7 +648,7 @@ def tab_Logistic():
         logistic_file = f.read()
 
     st.download_button(
-        label="📥 Logistic.xlsx をダウンロード",
+        label="📥 入力シートをダウンロード",
         data=logistic_file,
         file_name="Logistic.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
