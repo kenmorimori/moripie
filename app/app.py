@@ -765,7 +765,16 @@ def tab_LogisticNum():
     """
     )
 
-    # ↓ ここから先は従来コード（変更不要）
+    # ここで Python 側でダウンロードボタンを表示
+    with open("app/順序Logistic.xlsx", "rb") as f:
+        logistic_file = f.read()
+
+    st.download_button(
+        label="📥 入力シートをダウンロード",
+        data=logistic_file,
+        file_name="順序Logistic.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 
     up = st.file_uploader("ファイル（CSV / XLSX）をアップロード", type=["csv", "xlsx"], key="ordlogit_file")
