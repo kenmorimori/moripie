@@ -270,6 +270,15 @@ div[class*="st-emotion-cache"][class*="FileUploader"] *,
 div[class*="stFileUploader"] * {
     color: #000000 !important;
 }
+/* アップローダー全体の文字強制（最深部まで） */
+[data-testid="stFileUploader"] *,
+[data-testid="stFileUploader"] div *,
+[data-testid="stFileUploader"] section *,
+[data-testid="stFileUploader"] span *,
+[data-testid="stFileUploader"] label *,
+[data-testid="stFileUploader"] p * {
+    color: #000000 !important;
+}
 
 </style>
 
