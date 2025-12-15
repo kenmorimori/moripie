@@ -454,6 +454,17 @@ def tab_PCA():
 </ul>
 """
     )
+    
+     # ここで Python 側でダウンロードボタンを表示
+    with open("app/主成分＆因子分析.xlsx", "rb") as f:
+        logistic_file = f.read()
+
+    st.download_button(
+        label="📥 入力シートをダウンロード",
+        data=logistic_file,
+        file_name="主成分＆因子分析.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
     # === ファイル入力 ===
     up = st.file_uploader("PCA用ファイル（CSV / XLSX）をアップロードしてください", type=["csv", "xlsx"], key="pca_file")
@@ -2835,6 +2846,16 @@ def tab_factor():
         <li><b>因子数は任意選択（1〜10）</b></li>
     </ul>
     """
+    )
+    # ここで Python 側でダウンロードボタンを表示
+    with open("app/主成分＆因子分析.xlsx", "rb") as f:
+        logistic_file = f.read()
+
+    st.download_button(
+        label="📥 入力シートをダウンロード",
+        data=logistic_file,
+        file_name="主成分＆因子分析.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
     # === ファイル読み込み ===
