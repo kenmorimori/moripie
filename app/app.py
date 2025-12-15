@@ -172,8 +172,19 @@ def show_card(content_html: str):
 
 st.markdown("""
 <style>
-/* メインコンテンツ（右側）背景を黒に */
-[data-testid="stAppViewContainer"] {
+/* ページ全体の背景を黒に */
+html, body, .stApp {
+    background-color: #000000 !important;
+}
+
+/* サイドバーの背景も黒に */
+section[data-testid="stSidebar"] {
+    background-color: #000000 !important;
+}
+
+/* サイドバー内部（要素の背景）も黒に */
+section[data-testid="stSidebar"] .css-1d391kg, 
+section[data-testid="stSidebar"] .css-1v3fvcr {
     background-color: #000000 !important;
 }
 
