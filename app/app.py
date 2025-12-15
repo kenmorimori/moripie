@@ -327,6 +327,13 @@ div[role="status"] svg,
     stroke: #00ff88 !important;
     stroke-width: 2px !important;
 }
+/* =========================================================
+   ★ ボタン内部のテキストを必ず黒にする（最優先）
+   ========================================================= */
+button *, button p, button div, button span {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important; /* Safari 対策 */
+}
 
 </style>
 
