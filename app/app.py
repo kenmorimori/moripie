@@ -260,6 +260,16 @@ st.markdown("""
 code, code * {
     color: #000000 !important;
 }
+            
+[data-testid="stFileUploader"] * {
+    color: #000000 !important;
+}
+
+/* Streamlit の自動生成クラス（例: .st-emotion-cache-xxxxx）にも反映 */
+div[class*="st-emotion-cache"][class*="FileUploader"] *,
+div[class*="stFileUploader"] * {
+    color: #000000 !important;
+}
 
 </style>
 
