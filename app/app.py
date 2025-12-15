@@ -220,39 +220,52 @@ div[data-testid="stToolbar"] * {
 st.markdown("""
 <style>
 
-/* ① 黒背景エリア = 白文字 */
-.stApp {
-    background-color: #000000 !important;
-}
+<style>
 
-.stApp > div * {
+/* =========================================================
+   0) 黒背景エリアの文字色を白に（ただし “例外” は除外する）
+   ========================================================= */
+.stApp *:not(.card *):not([data-testid="stFileUploader"] *):not(button *):not(input *):not(code *):not([data-testid="stToolbar"] *) {
     color: #ffffff !important;
 }
 
-/* ② カード内は元の白文字（緑背景）を維持 */
+/* =========================================================
+   1) カード内は card 側の色を最優先（白）
+   ========================================================= */
 .card, .card * {
-    color: inherit !important;
+    color: #ffffff !important;
 }
 
-/* ③ 白背景コンポーネントは黒文字（Uploader / Button / TextInput） */
-[data-testid="stFileUploader"],
+/* =========================================================
+   2) 白背景コンポーネント（アップローダー / 入力欄 / ボタン）は黒文字
+   ========================================================= */
 [data-testid="stFileUploader"] *,
-[data-testid="stFileUploaderDropzoneInstructions"],
 [data-testid="stFileUploaderDropzoneInstructions"] *,
-button,
-button *,
-input,
-input * {
+input, input *,
+button, button *,
+textarea, textarea * {
     color: #000000 !important;
 }
 
-/* ④ サイドバー */
-[data-testid="stSidebar"], 
-[data-testid="stSidebar"] * {
-    color: #ffffff !important;
+/* Upload の「Browse files」専用 */
+button[data-testid="baseButton-secondary"],
+button[data-testid="baseButton-secondary"] * {
+    color: #000000 !important;
 }
 
-/* ⑤ code だけ黒文字 */
+/* =========================================================
+   3) 右上のヘッダー領域の文字も黒（ログアウトの背景が白）
+   ========================================================= */
+header[data-testid="stHeader"] *,
+[data-testid="stToolbar"] *,
+[data-testid="stHeader"] button *,
+[data-testid="stHeader"] svg {
+    color: #000000 !important;
+}
+
+/* =========================================================
+   4) code だけ黒文字
+   ========================================================= */
 code, code * {
     color: #000000 !important;
 }
