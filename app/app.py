@@ -3822,8 +3822,11 @@ def main():
 
         # ログアウトボタン
         if st.button("ログアウト"):
-            st.session_state.logged_in = False
-            st.experimental_rerun()  # ログアウト後にページを再実行してログイン画面に戻る
+           st.session_state["logged_in"] = False
+            st.session_state["user"] = None
+
+            # rerun
+            st.rerun()
 
         if tabs == "主成分分析":
             tab_PCA()
