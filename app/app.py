@@ -44,7 +44,7 @@ import base64
 
 
 
-logo = Image.open("app/moripie_logo1.png")
+logo = Image.open("app/LOGO.png")
 st.sidebar.image(logo, use_column_width=True)
 
 st.markdown("""
