@@ -272,7 +272,25 @@ button[kind="header"],
 button[kind="header"] * {
     color: #000000 !important;
 }
-            
+/* ================================
+   ✏ TextInput（ユーザー名/パスワードなど）を黒文字に戻す
+================================ */
+[data-testid="stTextInput"] input,
+[data-testid="stTextInput"] input::placeholder,
+[data-testid="stTextInput"] textarea,
+[data-testid="stTextInput"] textarea::placeholder,
+[data-testid="stTextInput"] label,
+[data-testid="stTextInput"] div,
+[data-testid="stTextInput"] * {
+    color: #000000 !important;
+}
+
+/* "Press Enter to apply" の補助テキスト */
+div[data-testid="InputInstructions"],
+div[data-testid="InputInstructions"] * {
+    color: #000000 !important;
+}
+         
 /* =====================================
    ⑤ code だけ黒文字を維持
 ===================================== */
