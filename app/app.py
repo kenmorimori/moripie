@@ -41,7 +41,7 @@ import textwrap
 import matplotlib.pyplot as plt
 import io
 import base64
-
+from semopy import Model
 
 
 logo = Image.open("app/LOGO.png")
@@ -2899,8 +2899,10 @@ def tab_factor():
     )
     # === 因子分析 ===
     from sklearn.decomposition import FactorAnalysis
-    model = FactorAnalysis(n_components=n_factor)
-    F = model.fit_transform(X)
+    model = Model(model_description)   # モデル構造（例：回帰式の文字列）
+    res = model.fit(df)
+
+    est = model.parameters_dataframe()
 
     loadings = pd.DataFrame(
         model.components_.T,
