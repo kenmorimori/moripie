@@ -3822,7 +3822,7 @@ def main():
 
         # ログアウトボタン
         if st.button("ログアウト"):
-           st.session_state["logged_in"] = False
+            st.session_state["logged_in"] = False
             st.session_state["user"] = None
 
             # rerun
