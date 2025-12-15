@@ -754,15 +754,15 @@ def tab_LogisticNum():
         return
 
     if df.shape[1] < 2:
-        st.error("少なくとも2列（1列目=目的、2列目以降=説明変数）が必要です。")
+        st.error("少なくとも2列（1列目=ID、2列目=目的、3列目以降=説明変数）が必要です。")
         return
 
     st.write("データプレビュー：")
     st.dataframe(df.head())
 
     # --- y / X ---
-    y_raw = df.iloc[:, 0]
-    X = df.iloc[:, 1:].copy()
+    y_raw = df.iloc[:, 1]
+    X = df.iloc[:, 2:].copy()
     X = X.apply(pd.to_numeric, errors='coerce')  # 非数値→NaN
 
     # 欠損処理
