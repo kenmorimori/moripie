@@ -2854,7 +2854,7 @@ def tab_factor():
     st.download_button(
         label="📥 入力シートをダウンロード",
         data=logistic_file,
-        file_name="主成分＆因子分析.xlsx",
+        file_name="主成分&因子分析.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
