@@ -218,97 +218,93 @@ div[data-testid="stToolbar"] * {
 """, unsafe_allow_html=True)
 
 st.markdown("""
-<style>
 
 <style>
 
 /* =========================================================
-   0) 黒背景エリアの文字色を白に（ただし “例外” は除外する）
+   ① 黒背景エリア → 白文字
+   （ただし “白背景コンポーネント” は後で黒文字で上書きする）
    ========================================================= */
-.stApp *:not(.card *):not([data-testid="stFileUploader"] *):not(code *):not(input):not(input *):not(textarea):not(textarea *):not(button):not(button *) {
+.stApp * {
     color: #ffffff !important;
 }
 
 /* =========================================================
-   1) カード内は card 側の色を最優先（白）
+   ② カード内（緑背景）はカードの白文字をそのまま優先
    ========================================================= */
 .card, .card * {
-    color: #ffffff !important;
+    color: inherit !important;
 }
 
 /* =========================================================
-   2) 白背景コンポーネント（アップローダー / 入力欄 / ボタン）は黒文字
+   ③ 白背景 UI コンポーネントは黒文字に戻す
    ========================================================= */
+
+/* FileUploader */
+[data-testid="stFileUploader"],
 [data-testid="stFileUploader"] *,
-[data-testid="stFileUploaderDropzoneInstructions"] *,
-input, input *,
-button, button *,
-textarea, textarea * {
+[data-testid="stFileUploaderDropzoneInstructions"],
+[data-testid="stFileUploaderDropzoneInstructions"] * {
     color: #000000 !important;
 }
 
-/* Upload の「Browse files」専用 */
+/* TextInput / TextArea */
+input, input *, textarea, textarea * {
+    color: #000000 !important;
+}
+
+/* ボタン（白背景タイプ） */
+button, button * {
+    color: #000000 !important;
+}
+
+/* Browse files 専用（念のため） */
 button[data-testid="baseButton-secondary"],
 button[data-testid="baseButton-secondary"] * {
     color: #000000 !important;
 }
 
 /* =========================================================
-   3) 右上のヘッダー領域の文字も黒（ログアウトの背景が白）
+   ④ ヘッダー（右上のログアウトなど）は黒文字
    ========================================================= */
 header[data-testid="stHeader"] *,
-[data-testid="stToolbar"] *,
-[data-testid="stHeader"] button *,
-[data-testid="stHeader"] svg {
+[data-testid="stToolbar"] * {
     color: #000000 !important;
 }
 
 /* =========================================================
-   4) code だけ黒文字
+   ⑤ h1 見出しは必ず白文字（ログイン画面含む）
    ========================================================= */
-code, code * {
-    color: #000000 !important;
-}
-            
-/* Streamlit のタイトル（h1）を黒背景では白文字に固定 */
-div[data-testid="stApp"] h1,
-div[data-testid="stApp"] h1 * {
+h1, h1 * {
     color: #ffffff !important;
 }
 
-/* ログイン画面など、幅が狭い場合の container 内の h1 も強制 */
-.element-container h1,
-.element-container h1 * {
-    color: #ffffff !important;
-}
-
-/* Markdown 経由のタイトルにも適用 */
+/* Markdown 内の h1 にも適用 */
 [data-testid="stMarkdownContainer"] h1,
 [data-testid="stMarkdownContainer"] h1 * {
     color: #ffffff !important;
 }
 
-/* Sidebar ラジオボタン・チェックボックス・テキストを完全に白文字化 */
-[data-testid="stSidebar"] label,
-[data-testid="stSidebar"] div,
-[data-testid="stSidebar"] span,
-[data-testid="stSidebar"] p {
+/* element-container（ログイン画面）内も強制 */
+.element-container h1, .element-container h1 * {
     color: #ffffff !important;
 }
 
-/* ラジオボタン内部のラベル */
-[data-testid="stSidebar"] .stRadio label,
-[data-testid="stSidebar"] .stRadio div,
-[data-testid="stSidebar"] .stRadio span {
+/* =========================================================
+   ⑥ code は黒文字
+   ========================================================= */
+code, code * {
+    color: #000000 !important;
+}
+
+/* =========================================================
+   ⑦ Sidebar のテキストはすべて白
+   ========================================================= */
+[data-testid="stSidebar"],
+[data-testid="stSidebar"] * {
     color: #ffffff !important;
 }
 
-/* ホバー・選択状態のラベルも白 */
-[data-testid="stSidebar"] .stRadio label:hover,
-[data-testid="stSidebar"] .stRadio label:active {
-    color: #ffffff !important;
-}
-            
 </style>
 
 
