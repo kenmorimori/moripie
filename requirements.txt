@@ -18,3 +18,5 @@ seaborn==0.13.2
 # 介入効果
 pycausalimpact @ git+https://github.com/WillianFuks/causalimpact@master
 # force rebuild at 2025-10-18
+
+prince
