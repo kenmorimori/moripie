@@ -1012,8 +1012,9 @@ def tab_MultipleRegression():
 
     <h3>inputデータ</h3>
     <ul>
-        <li><b>1列目：目的変数（y）</b>（売上、認知得点、CV数など）</li>
-        <li><b>2列目以降：説明変数（x1, x2, ...）</b>（媒体費用、接触指標、属性など）</li>
+        <li><b>1列目：日付（y）</b>（日にち、週など）</li>
+        <li><b>2列目：目的変数（y）</b>（売上、認知得点、CV数など）</li>
+        <li><b>3列目以降：説明変数（x1, x2, ...）</b>（媒体費用、接触指標、属性など）</li>
         <li>CSV / Excel（<code>A_入力</code> シートがあれば優先）</li>
         <li>数値列のみ自動抽出し、非数値列は除外</li>
         <li>欠損値処理は以下から選択：</li>
@@ -1070,16 +1071,16 @@ def tab_MultipleRegression():
         st.error(f"読み込みエラー: {e}")
         return
 
-    if df.shape[1] < 2:
-        st.error("少なくとも2列（目的+説明変数）が必要です。")
+    if df.shape[1] < 3:
+        st.error("少なくとも3列（目的+説明変数）が必要です。")
         return
 
     st.write("プレビュー：")
     st.dataframe(df.head())
 
     # --- 列の整理 ---
-    y = pd.to_numeric(df.iloc[:, 0], errors="coerce")
-    X_raw = df.iloc[:, 1:].copy()
+    y = pd.to_numeric(df.iloc[:, 1], errors="coerce")
+    X_raw = df.iloc[:, 2:].copy()
     X_num = X_raw.apply(pd.to_numeric, errors="coerce")
     dropped = [c for c in X_raw.columns if c not in X_num.columns]
     if dropped:
@@ -1089,8 +1090,8 @@ def tab_MultipleRegression():
     na_opt = st.radio("欠損の扱い", ["行削除（推奨）", "列平均で補完"], index=0, horizontal=True)
     if na_opt == "行削除（推奨）":
         data = pd.concat([y, X_num], axis=1).dropna()
-        y = data.iloc[:, 0].values.astype(float)
-        X = data.iloc[:, 1:].copy()
+        y = data.iloc[:, 1].values.astype(float)
+        X = data.iloc[:, 2:].copy()
     else:
         X = X_num.fillna(X_num.mean())
         ok = y.notna()
