@@ -355,7 +355,11 @@ svg[role="img"],
 /* スピナーの周囲の文字も白にする */
 [data-testid="stStatusWidget"] * {
     color: #ffffff !important;
-}            
+}
+.stTextArea textarea::selection {
+    background: #DDE4EB !important;
+    color: #000 !important;
+}     
 
 </style>
 
