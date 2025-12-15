@@ -220,77 +220,59 @@ div[data-testid="stToolbar"] * {
 st.markdown("""
 <style>
 
-/* ==============================================
-   🎨 基本：黒背景エリアの文字は白に
-   ※ ただしカード内と白背景コンポーネントは除外する
-============================================== */
-.stApp, .stApp *:not(.card):not(.card *):not(.stFileUploader *):not(.stTextInput *):not(.stButton *):not(code):not(code *) {
+/* =====================================
+   ① 黒背景エリア（全体） → 白文字
+   ※ カード内・アップローダー内は除外
+===================================== */
+.stApp *:not(.card *):not([data-testid="stFileUploader"] *):not(code):not(code *) {
     color: #ffffff !important;
 }
 
-/* ==============================================
-   🟩 カード内は “inherit” （もともとの白文字を利用）
-============================================== */
+/* =====================================
+   ② カード内はオリジナル色を使う
+===================================== */
 .card, .card * {
     color: inherit !important;
 }
 
-/* ==============================================
-   📌 左サイドバーも白文字
-============================================== */
+/* =====================================
+   ③ 左サイドバーも白文字
+===================================== */
 [data-testid="stSidebar"], 
 [data-testid="stSidebar"] * {
     color: #ffffff !important;
 }
 
-/* ==============================================
-   ⬜ 白背景コンポーネントは黒文字に戻す
-   （Uploader / Button / TextInput など）
-============================================== */
-.stFileUploader, .stFileUploader *,
-.stButton, .stButton *,
-.stTextInput, .stTextInput *,
-.st-emotion-cache-13ln4jf, .st-emotion-cache-13ln4jf * {
-    color: #000000 !important;
-}
+/* =====================================
+   ④ アップローダー全体（白背景） → 黒文字
+===================================== */
 
-/* ==============================================
-   ⬛ code は黒のまま
-============================================== */
-code, code * {
-    color: #000000 !important;
-}
-            
+/* ドロップゾーン・説明 */
 [data-testid="stFileUploader"] * {
     color: #000000 !important;
 }
 
-/* Streamlit の自動生成クラス（例: .st-emotion-cache-xxxxx）にも反映 */
-div[class*="st-emotion-cache"][class*="FileUploader"] *,
-div[class*="stFileUploader"] * {
-    color: #000000 !important;
-}
-/* アップローダー全体の文字強制（最深部まで） */
-[data-testid="stFileUploader"] *,
-[data-testid="stFileUploader"] div *,
-[data-testid="stFileUploader"] section *,
-[data-testid="stFileUploader"] span *,
-[data-testid="stFileUploader"] label *,
-[data-testid="stFileUploader"] p * {
-    color: #000000 !important;
-}
-            /* Browse files の文字だけ黒にする */
+/* “Browse files” ボタン */
 button[data-testid="baseButton-secondary"],
 button[data-testid="baseButton-secondary"] * {
     color: #000000 !important;
 }
 
-[data-testid="stFileUploaderDropzoneInstructions"] *,
-[data-testid="stFileUploaderDropzoneInstructions"] {
+/* アップロード説明テキスト */
+[data-testid="stFileUploaderDropzoneInstructions"],
+[data-testid="stFileUploaderDropzoneInstructions"] * {
+    color: #000000 !important;
+}
+
+/* =====================================
+   ⑤ code だけ黒文字を維持
+===================================== */
+code, code * {
     color: #000000 !important;
 }
 
 </style>
+
 
 """, unsafe_allow_html=True)
 
