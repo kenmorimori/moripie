@@ -290,6 +290,19 @@ h1, h1 * {
 .element-container h1, .element-container h1 * {
     color: #ffffff !important;
 }
+.element-container input,
+.element-container input *,
+.element-container textarea,
+.element-container textarea * {
+    color: #000000 !important;       /* 入力欄の文字を黒に */
+    -webkit-text-fill-color: #000000 !important;  /* Safari 対策 */
+}
+
+/* プレースホルダーも黒に */
+.element-container input::placeholder,
+.element-container textarea::placeholder {
+    color: #444 !important;
+}
 
 /* =========================================================
    ⑥ code は黒文字
