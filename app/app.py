@@ -279,6 +279,12 @@ div[class*="stFileUploader"] * {
 [data-testid="stFileUploader"] p * {
     color: #000000 !important;
 }
+            /* Browse files の文字だけ黒にする */
+button[data-testid="baseButton-secondary"],
+button[data-testid="baseButton-secondary"] * {
+    color: #000000 !important;
+}
+
 
 </style>
 
