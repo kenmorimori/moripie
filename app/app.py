@@ -188,11 +188,32 @@ section[data-testid="stSidebar"] .css-1v3fvcr {
     background-color: #000000 !important;
 }
 
+/* Streamlit のツールバー（右上の Share, GitHub など）*/
+header[data-testid="stHeader"] {
+    background-color: #000000 !important;
+}
+
+/* ヘッダー内部の背景（余白部分も黒に） */
+header[data-testid="stHeader"] div {
+    background-color: #000000 !important;
+}
+
+/* ツールバーコンテナ */
+div[data-testid="stToolbar"] {
+    background-color: #000000 !important;
+}
+
+/* アイコンの色も緑 or 白にしたい場合： */
+div[data-testid="stToolbar"] * {
+    color: #ffffff !important;
+}
+
 /* カードとの余白を確保 */
 .block-container {
     padding-top: 2rem;
     padding-bottom: 2rem;
 }
+            
 </style>
 """, unsafe_allow_html=True)
 
