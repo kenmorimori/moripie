@@ -222,170 +222,110 @@ st.markdown("""
 
 <style>
 
-/* =========================================================
-   ① 黒背景エリア → 白文字（基本ルール）
-   ========================================================= */
+/* ============================================
+   0. Streamlit 全体は白文字（基本）
+   ============================================ */
 .stApp * {
     color: #ffffff !important;
 }
 
-/* =========================================================
-   ② カード内（緑背景）はカード独自の色を優先
-   ========================================================= */
-.card, .card * {
-    color: inherit !important;
-}
-
-/* =========================================================
-   ③ 白背景 UI コンポーネント（Uploader / 入力欄 / ボタン）は黒文字
-   ========================================================= */
+/* ============================================
+   1. 白背景コンポーネントの黒文字ルール
+   ============================================ */
 
 /* FileUploader */
 [data-testid="stFileUploader"],
 [data-testid="stFileUploader"] *,
-[data-testid="stFileUploaderDropzoneInstructions"],
-[data-testid="stFileUploaderDropzoneInstructions"] * {
-    color: #000000 !important;
+[data-testid="stFileUploaderDropzoneInstructions"] {
+    color: #000 !important;
 }
 
-/* TextInput / TextArea（標準入力欄） */
-input, input *,
-textarea, textarea * {
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important; /* Safari対策 */
+/* TextInput / TextArea */
+input, input *, textarea, textarea * {
+    color: #000 !important;
+    -webkit-text-fill-color: #000 !important;
 }
 
-/* ボタン（白背景タイプ） */
-button, button * {
-    color: #000000 !important;
-}
-
-/* Browse files 専用 */
-button[data-testid="baseButton-secondary"],
-button[data-testid="baseButton-secondary"] * {
-    color: #000000 !important;
-}
-
-/* =========================================================
-   ④ TextArea（st.text_area）の白文字化を完全防止
-   ========================================================= */
-
-/* TextArea のコンテナ全体 */
+/* TextArea コンテナそのもの */
 .stTextArea, .stTextArea * {
-    color: #000000 !important;
+    color: #000 !important;
 }
 
-/* wrapper div も黒文字 */
-.stTextArea > div,
-.stTextArea > div * {
-    color: #000000 !important;
+/* Buttons（白背景なら黒文字） */
+button, button * {
+    color: #000 !important;
 }
 
-/* placeholder */
-.stTextArea textarea::placeholder {
-    color: #666 !important;
+/* プレースホルダー */
+textarea::placeholder {
+    color: #555 !important;
 }
 
-/* =========================================================
-   ⑤ Markdown / code / pre の調整
-   ========================================================= */
-pre, pre * {
-    color: #000000 !important;
-}
-
-code, code * {
-    color: #000000 !important;
-}
-
-/* =========================================================
-   ⑥ ヘッダー（右上のログアウトなど）は黒文字
-   ========================================================= */
+/* ============================================
+   2. ヘッダー（ログアウト等）は黒文字
+   ============================================ */
 header[data-testid="stHeader"] *,
 [data-testid="stToolbar"] * {
-    color: #000000 !important;
+    color: #000 !important;
 }
 
-/* =========================================================
-   ⑦ h1 見出しは必ず白文字（ログイン画面含む）
-   ========================================================= */
+/* ============================================
+   3. h1（大見出し）は白文字固定
+   ============================================ */
 h1, h1 * {
-    color: #ffffff !important;
+    color: #fff !important;
 }
 
+/* Markdown の h1 */
 [data-testid="stMarkdownContainer"] h1,
 [data-testid="stMarkdownContainer"] h1 * {
-    color: #ffffff !important;
+    color: #fff !important;
 }
 
-/* ログイン画面の h1 / 入力欄 */
+/* ログイン画面 */
 .element-container h1, .element-container h1 * {
-    color: #ffffff !important;
+    color: #fff !important;
+}
+.element-container input, .element-container textarea {
+    color: #000 !important;
 }
 
-.element-container input,
-.element-container input *,
-.element-container textarea,
-.element-container textarea * {
+/* ============================================
+   4. Markdown の code / pre ブロック を黒文字に強制
+   （←今回見えなかった根本原因）
+   ============================================ */
+code,
+code *,
+pre,
+pre *,
+.stMarkdown code,
+.stMarkdown pre {
     color: #000000 !important;
     -webkit-text-fill-color: #000000 !important;
 }
 
-/* =========================================================
-   ⑧ Sidebar は白文字
-   ========================================================= */
+/* code ブロックの背景が白なので文字が読める */
+pre, code {
+    background: #f5f5f5 !important;
+}
+
+/* ============================================
+   5. Sidebar は白文字
+   ============================================ */
 [data-testid="stSidebar"],
 [data-testid="stSidebar"] * {
     color: #ffffff !important;
 }
 
-/* =========================================================
-   ⑨ Spinner（処理中アイコン）を緑で見やすく
-   ========================================================= */
+/* ============================================
+   6. Spinner（インジケータ）は緑色
+   ============================================ */
 svg[role="img"],
 div[role="status"] svg,
-[data-testid="stStatusWidget"] svg,
-.stSpinner > div > svg {
+[data-testid="stStatusWidget"] svg {
     color: #00ff88 !important;
     stroke: #00ff88 !important;
     stroke-width: 2px !important;
-}
-
-/* Spinner 周囲の文字 */
-[data-testid="stStatusWidget"] * {
-    color: #ffffff !important;
-}
-/* TextArea 全コンテナを黒文字に */
-div[data-testid="stTextArea"],
-div[data-testid="stTextArea"] * {
-    color: #000000 !important;
-}
-
-/* textarea 本体の文字色 */
-div[data-testid="stTextArea"] textarea {
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important; /* Safari */
-}
-
-/* placeholder */
-div[data-testid="stTextArea"] textarea::placeholder {
-    color: #666 !important;
-}
-
-/* Streamlit v1.32〜 の TextArea ラッパー対応（新仕様）*/
-.st-key-text_area textarea {
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important;
-}
-
-.st-key-text_area *, 
-.st-key-text_area div {
-    color: #000000 !important;
-}
-
-/* 背景が薄いグレーの layer に上書きされる場合があるため更に強制 */
-textarea:not([color]) {
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important;
 }
 
 </style>
