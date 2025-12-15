@@ -356,10 +356,21 @@ svg[role="img"],
 [data-testid="stStatusWidget"] * {
     color: #ffffff !important;
 }
-.stTextArea textarea::selection {
-    background: #DDE4EB !important;
-    color: #000 !important;
-}     
+/* 入力文字 */
+textarea, textarea * {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;  /* Safari対策 */
+}
+
+/* TextArea コンテナ全体（div）も黒文字に */
+.stTextArea, .stTextArea * {
+    color: #000000 !important;
+}
+
+/* placeholder も見えるように */
+textarea::placeholder {
+    color: #666 !important;
+}
 
 </style>
 
