@@ -2899,11 +2899,11 @@ def tab_factor():
     )
     # === 因子分析 ===
     from sklearn.decomposition import FactorAnalysis
-    model = Model(model_description)   # モデル構造（例：回帰式の文字列）
-    res = model.fit(df)
+    # --- 因子分析 ---
+    model = FactorAnalysis(n_components=n_factor)
+    F = model.fit_transform(X)
 
-    est = model.parameters_dataframe()
-
+    # 因子負荷量
     loadings = pd.DataFrame(
         model.components_.T,
         index=X.columns,
@@ -2913,9 +2913,10 @@ def tab_factor():
     st.subheader("因子負荷量（Factor Loadings）")
     st.dataframe(loadings.style.format("{:.3f}"))
 
+    # 因子スコア
     score_df = pd.DataFrame(F, columns=[f"Factor{i+1}" for i in range(n_factor)])
     st.subheader("因子スコア（Factor Scores）")
-    st.dataframe(score_df.head())
+    st.dataframe(score_df)
 
     # ダウンロード
     st.download_button("因子負荷量CSV", loadings.to_csv().encode("utf-8"), "factor_loadings.csv")
