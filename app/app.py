@@ -285,6 +285,10 @@ button[data-testid="baseButton-secondary"] * {
     color: #000000 !important;
 }
 
+[data-testid="stFileUploaderDropzoneInstructions"] *,
+[data-testid="stFileUploaderDropzoneInstructions"] {
+    color: #000000 !important;
+}
 
 </style>
 
