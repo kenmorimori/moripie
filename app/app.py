@@ -1,10 +1,8 @@
 import streamlit as st, traceback
 
-# まず必ず作っておく（NameError回避）
 _SEM_OK: bool = False
 _SEM_ERR = None  # (err_name, err_msg, traceback_text)
 
-# ---- semopy 互換インポート（旧/新API両対応）----
 try:
     from semopy import ModelMeans, Optimizer
     from semopy.inspector import inspect
