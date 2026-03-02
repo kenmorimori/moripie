@@ -4,7 +4,8 @@ _SEM_OK: bool = False
 _SEM_ERR = None  # (err_name, err_msg, traceback_text)
 
 try:
-    from semopy import ModelMeans, Optimizer
+    from semopy import Model
+    from semopy import calc_stats
     from semopy.inspector import inspect
     try:
         from semopy.report import gather_statistics          # 旧API
@@ -39,7 +40,6 @@ import textwrap
 import matplotlib.pyplot as plt
 import io
 import base64
-from semopy import Model
 
 
 
@@ -1510,45 +1510,58 @@ def tab_SEM():
 
     st.code(syntax, language="markdown")
 
+
     if st.button("推定を実行"):
         try:
-            # 平均構造あり（切片推定）
-            model = ModelMeans(syntax)
+            # 共分散ベースSEM（安定）
+            model = Model(syntax)
             model.fit(data)
         except Exception as e:
             st.error(f"推定エラー: {e}")
             return
 
-        # 係数（推定値・SE・z・p）
+        # -------------------------
+        # 係数テーブル
+        # -------------------------
         try:
-            # もっとも互換性が高い
-            est = inspect(model)  
-        except Exception:
-            # 古い semopy 用
-            try:
-                est = model.parameters_dataframe()
-            except Exception:
-                est = model.inspect()
+            est = inspect(model)
+            st.subheader("推定結果（係数）")
+            st.dataframe(est)
+        except Exception as e:
+            st.warning(f"係数取得失敗: {e}")
 
-        st.subheader("推定結果（係数）")
-        st.dataframe(est)
-
-        # 適合度指標
+        # -------------------------
+        # 適合度指標（確実版）
+        # -------------------------
         try:
-            stats = get_sem_stats(model, data)
+            stats = calc_stats(model)
+
             fit_df = pd.DataFrame({
-                "metric": ["CFI","TLI","RMSEA","SRMR","AIC","BIC","DOF","n_params"],
-                "value": [stats.get("CFI"), stats.get("TLI"), stats.get("RMSEA"),
-                          stats.get("SRMR"), stats.get("AIC"), stats.get("BIC"),
-                          stats.get("DoF"), stats.get("n_params")]
+                "metric": ["CFI","TLI","RMSEA","SRMR","GFI","AGFI","AIC","BIC","DoF"],
+                "value": [
+                    stats.get("CFI"),
+                    stats.get("TLI"),
+                    stats.get("RMSEA"),
+                    stats.get("SRMR"),
+                    stats.get("GFI"),
+                    stats.get("AGFI"),
+                    stats.get("AIC"),
+                    stats.get("BIC"),
+                    stats.get("DoF")
+                ]
             })
+
             st.subheader("適合度指標")
             st.dataframe(fit_df)
-            st.caption("目安：CFI/TLI≥0.90、RMSEA≤0.08、SRMR≤0.08（文脈依存）")
-        except Exception:
-            st.info("適合度統計の算出に失敗しました。")
 
-        # 標準化解（推奨：解釈しやすい）
+            st.caption("目安：CFI/TLI≥0.90、RMSEA≤0.08、SRMR≤0.08")
+
+        except Exception as e:
+            st.warning(f"適合度算出失敗: {e}")
+
+        # -------------------------
+        # 標準化解
+        # -------------------------
         try:
             std_est = inspect(model, std_est=True)
             st.subheader("標準化解（標準化係数）")
@@ -1556,31 +1569,38 @@ def tab_SEM():
         except Exception:
             pass
 
-        # 予測・残差（yのみ表示）
+        # -------------------------
+        # 因子得点（存在する場合）
+        # -------------------------
         try:
-            y_pred = model.predict_factors(data)  # 潜在因子推定
-            st.subheader("因子得点")
-            st.dataframe(y_pred)
+            factor_scores = model.predict_factors(data)
+            if factor_scores is not None and not factor_scores.empty:
+                st.subheader("因子得点")
+                st.dataframe(factor_scores)
         except Exception:
-            y_pred = pd.DataFrame()
+            pass
 
-        try:
-            implied = model.implied_covariance  # 暗黙の共分散
-        except Exception:
-            implied = None
-
-        # 出力ダウンロード
+        # -------------------------
+        # CSVダウンロード
+        # -------------------------
         @st.cache_data
         def _csv_bytes(df_):
             return df_.to_csv(index=False).encode("utf-8-sig")
 
-        st.download_button("係数テーブルをCSVでダウンロード",
-                           data=_csv_bytes(est), file_name="sem_params.csv", mime="text/csv")
+        st.download_button(
+            "係数テーブルをCSVでダウンロード",
+            data=_csv_bytes(est),
+            file_name="sem_params.csv",
+            mime="text/csv"
+        )
 
         if 'std_est' in locals():
-            st.download_button("標準化解をCSVでダウンロード",
-                               data=_csv_bytes(std_est), file_name="sem_std_params.csv", mime="text/csv")
-
+            st.download_button(
+                "標準化解をCSVでダウンロード",
+                data=_csv_bytes(std_est),
+                file_name="sem_std_params.csv",
+                mime="text/csv"
+            )
 
 def tab_MMM():
     show_card("""
