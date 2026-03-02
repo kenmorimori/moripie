@@ -1559,6 +1559,8 @@ def tab_SEM():
         # 予測・残差（yのみ表示）
         try:
             y_pred = model.predict_factors(data)  # 潜在因子推定
+            st.subheader("因子得点")
+            st.dataframe(y_pred)
         except Exception:
             y_pred = pd.DataFrame()
 
